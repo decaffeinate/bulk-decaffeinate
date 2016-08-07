@@ -1,14 +1,12 @@
 import 'babel-polyfill';
-import { exists, readdir, stat } from 'mz/fs';
+import { exists, readdir, stat, writeFile } from 'mz/fs';
 import { exec } from 'mz/child_process';
 import { join } from 'path';
 
 const NUM_CONCURRENT_PROCESSES = 4;
 
 export default function run() {
-  let startTime = new Date();
   testFiles()
-    .then(() => {console.log(`Time taken: ${(new Date() - startTime) / 1000} seconds`);})
     .catch((error) => console.error(error));
 }
 
@@ -16,7 +14,7 @@ async function testFiles() {
   console.log('Discovering .coffee files in the current directory...');
   let coffeeFiles = await getCoffeeFilesUnderPath('.');
   let decaffeinateResults = await tryDecaffeinateFiles(coffeeFiles);
-  printResults(decaffeinateResults);
+  await printResults(decaffeinateResults);
 }
 
 async function getCoffeeFilesUnderPath(path) {
@@ -95,13 +93,30 @@ async function getDecaffeinateCommand() {
   }
 }
 
-function printResults(results) {
+async function printResults(results) {
+  let errorResults = results.filter(r => r.error != null);
+  if (errorResults.length === 0) {
+    console.log(`All checks succeeded! Decaffeinate can convert all ${results.length} files.`);
+  } else {
+    console.log(`${errorResults.length} files failed to convert:`);
+    for (let result of errorResults) {
+      console.log(result.path);
+    }
+    console.log();
+    await writeFile('decaffeinate-errors.log', getVerboseErrors(results));
+    console.log('Full errors written to decaffeinate-errors.log');
+  }
+}
+
+function getVerboseErrors(results) {
+  let errorMessages = [];
   for (let {path, error} of results) {
     if (error) {
-      console.log(`\n***** ${path} failed:`);
-      console.log(getStdout(error));
+      errorMessages.push(`***** ${path} failed:`);
+      errorMessages.push(getStdout(error));
     }
   }
+  return errorMessages.join('\n');
 }
 
 function getStdout({message}) {
