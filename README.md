@@ -3,7 +3,7 @@
 A tool, backed by [decaffeinate](http://decaffeinate-project.org/), to help you
 convert some or all of a CoffeeScript codebase to JavaScript.
 
-Currently, `bulk-decaffeinate` is useful for *evaluating* a codebase for use
+Currently, `bulk-decaffeinate` is useful for evaluating a codebase for use
 with decaffeinate, but does not yet perform the full conversion. Just run
 `bulk-decaffeinate --help` for instructions.
 
@@ -37,7 +37,7 @@ To open failures in the online repl, run "bulk-decaffeinate view-errors"
 
 ## Future plans
 
-This project is in early stages. Here are some things coming up.
+This project is in early stages. Here are some things coming up:
 
 * Add a `convert` command that actually runs decaffeinate to convert a codebase.
 * Add a flexible way to specify which files should be checked/converted.
@@ -46,3 +46,7 @@ This project is in early stages. Here are some things coming up.
 * Allow running custom follow-up codemods.
 * Create backups of the `.coffee` files so you can easily compare before and
   after.
+* When displaying errors, classify any known issues automatically and link to
+  the corresponding GitHub issue.
+* Any other sanity checks, instructions, or help for running decaffeinate on a
+  real-world codebase.
