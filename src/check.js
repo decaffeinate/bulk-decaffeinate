@@ -1,5 +1,6 @@
 import { exists, readdir, stat, writeFile } from 'mz/fs';
 import { exec } from 'mz/child_process';
+import readline from 'mz/readline';
 import { join } from 'path';
 
 const NUM_CONCURRENT_PROCESSES = 4;
@@ -12,6 +13,9 @@ export default async function check() {
     return;
   }
   let decaffeinateResults = await tryDecaffeinateFiles(coffeeFiles);
+  if (decaffeinateResults === null) {
+    return;
+  }
   await printResults(decaffeinateResults);
 }
 
@@ -35,6 +39,9 @@ async function getCoffeeFilesUnderPath(path) {
 
 async function tryDecaffeinateFiles(coffeeFiles) {
   let decaffeinateCommand = await getDecaffeinateCommand();
+  if (decaffeinateCommand === null) {
+    return null;
+  }
 
   let numProcessed = 0;
   let numFailures = 0;
@@ -77,8 +84,17 @@ async function getDecaffeinateCommand() {
       await exec('which decaffeinate');
       return 'decaffeinate';
     } catch (e) {
-      throw new Error(
-        'decaffeinate binary not found. Make sure it is on your PATH or in node_modules.');
+      console.log('decaffeinate binary not found on the PATH or in node_modules.');
+      let rl = readline.createInterface(process.stdin, process.stdout);
+      let answer = await rl.question('Run "npm install -g decaffeinate"? [Y/n] ');
+      rl.close();
+      if (answer.toLowerCase().startsWith('n')) {
+        console.log('decaffeinate must be installed.');
+        return null;
+      }
+      console.log('Installing decaffeinate globally...');
+      console.log((await exec('npm install -g decaffeinate'))[0]);
+      return 'decaffeinate';
     }
   }
 }

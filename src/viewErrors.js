@@ -21,6 +21,7 @@ export default async function viewErrors() {
     let rl = readline.createInterface(process.stdin, process.stdout);
     let answer = await rl.question(
       `This will open ${filesToOpen.length} browser tabs. Do you want to proceed? [y/N] `);
+    rl.close();
     if (!answer.toLowerCase().startsWith('y')) {
       return;
     }

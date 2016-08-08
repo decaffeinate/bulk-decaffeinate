@@ -9,7 +9,7 @@ with decaffeinate, but does not yet perform the full conversion. Just run
 
 Sample usage:
 ```
-> npm install -g bulk-decaffeinate
+> npm install -g bulk-decaffeinate decaffeinate
 ...
 > git clone git@github.com:github/hubot.git
 ...

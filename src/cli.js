@@ -13,8 +13,7 @@ export default function () {
   Commands:
     check: Try decaffeinate on all files in the current directory and generate a
       report of which files can be converted.
-    view-errors: Open failures from the most recent run in an online repl.
-    `)
+    view-errors: Open failures from the most recent run in an online repl.`)
     .action(commandArg => command = commandArg)
     .parse(process.argv);
 
