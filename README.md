@@ -4,20 +4,15 @@ A tool, backed by [decaffeinate](http://decaffeinate-project.org/), to help you
 convert some or all of a CoffeeScript codebase to JavaScript.
 
 Currently, `bulk-decaffeinate` is useful for *evaluating* a codebase for use
-with decaffeinate, but does not yet perform the full conversion. In the future,
-it will help with things like generating proper git commits and running
-post-decaffeinate cleanups like `eslint --fix`.
+with decaffeinate, but does not yet perform the full conversion. Just run
+`bulk-decaffeinate --help` for instructions.
 
 Sample usage:
-```bash
+```
 > npm install -g bulk-decaffeinate
+...
 > git clone git@github.com:github/hubot.git
-Cloning into 'hubot'...
-remote: Counting objects: 8287, done.
-remote: Total 8287 (delta 0), reused 0 (delta 0), pack-reused 8287
-Receiving objects: 100% (8287/8287), 1.75 MiB | 694.00 KiB/s, done.
-Resolving deltas: 100% (4677/4677), done.
-Checking connectivity... done.
+...
 > cd hubot
 > bulk-decaffeinate check
 Discovering .coffee files in the current directory...
@@ -37,5 +32,17 @@ test/brain_test.coffee
 Wrote decaffeinate-errors.log and decaffeinate-results.json with more detailed info.
 To open failures in the online repl, run "bulk-decaffeinate view-errors"
 > bulk-decaffeinate view-errors
-# (7 browser tabs are opened, showing all failures.)
+(7 browser tabs are opened, showing all failures.)
 ```
+
+## Future plans
+
+This project is in early stages. Here are some things coming up.
+
+* Add a `convert` command that actually runs decaffeinate to convert a codebase.
+* Add a flexible way to specify which files should be checked/converted.
+* Automatically create git commits that properly preserve history.
+* Run follow-up commands like `eslint --fix` once decaffeinate finishes.
+* Allow running custom follow-up codemods.
+* Create backups of the `.coffee` files so you can easily compare before and
+  after.
