@@ -4,7 +4,8 @@ import opn from 'opn';
 
 export default async function viewErrors() {
   if (!(await exists('decaffeinate-results.json'))) {
-    console.log('decaffeinate-results.json file not found!');
+    console.log(
+      'decaffeinate-results.json file not found. Please run the "check" command first.');
     return;
   }
 

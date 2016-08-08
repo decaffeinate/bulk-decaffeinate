@@ -7,6 +7,10 @@ const NUM_CONCURRENT_PROCESSES = 4;
 export default async function check() {
   console.log('Discovering .coffee files in the current directory...');
   let coffeeFiles = await getCoffeeFilesUnderPath('.');
+  if (coffeeFiles.length === 0) {
+    console.log('No CoffeeScript files were found in the current directory.');
+    return;
+  }
   let decaffeinateResults = await tryDecaffeinateFiles(coffeeFiles);
   await printResults(decaffeinateResults);
 }
@@ -35,7 +39,8 @@ async function tryDecaffeinateFiles(coffeeFiles) {
   let numProcessed = 0;
   let numFailures = 0;
   let numTotal = coffeeFiles.length;
-  console.log(`Trying decaffeinate on ${numTotal} files...`);
+  console.log(
+    `Trying decaffeinate on ${numTotal} files using ${NUM_CONCURRENT_PROCESSES} workers...`);
 
   let results = [];
   let activePromises = {};
