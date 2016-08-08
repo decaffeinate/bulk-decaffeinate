@@ -19,7 +19,7 @@ export default async function viewErrors() {
   if (filesToOpen.length > 10) {
     let rl = readline.createInterface(process.stdin, process.stdout);
     let answer = await rl.question(
-      `This will open ${filesToOpen.length} browser tabs. Do you want to proceed? [y/N]`);
+      `This will open ${filesToOpen.length} browser tabs. Do you want to proceed? [y/N] `);
     if (!answer.toLowerCase().startsWith('y')) {
       return;
     }
