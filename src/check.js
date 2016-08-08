@@ -83,21 +83,21 @@ async function tryDecaffeinate(decaffeinateCommand, path) {
     await exec(`${decaffeinateCommand} < '${path}'`);
     return {path, error: null};
   } catch (e) {
-    return {path, error: getStdout(e)}
+    return {path, error: getStdout(e)};
   }
 }
 
 function getStdout({message}) {
   let matchString = '\nstdin: ';
   if (message.indexOf(matchString) !== -1) {
-    return message.substring(message.indexOf(matchString) + matchString.length)
+    return message.substring(message.indexOf(matchString) + matchString.length);
   } else {
     return message.substring(message.indexOf('\n') + 1);
   }
 }
 
 async function printResults(results) {
-  let errorResults = results.filter(r => r.error != null);
+  let errorResults = results.filter(r => r.error !== null);
   if (errorResults.length === 0) {
     console.log(`All checks succeeded! Decaffeinate can convert all ${results.length} files.`);
   } else {
