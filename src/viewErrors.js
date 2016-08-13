@@ -34,6 +34,6 @@ export default async function viewErrors() {
 async function openInRepl(path) {
   let fileContents = await readFile(path);
   let encodedFile = encodeURIComponent(fileContents);
-  let url = `http://decaffeinate-project.org/repl/#?evaluate=false&code=${encodedFile}`;
+  let url = `http://decaffeinate-project.org/repl/#?evaluate=false&stage=full&code=${encodedFile}`;
   await opn(url, {wait: false});
 }
