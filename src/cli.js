@@ -2,6 +2,7 @@ import 'babel-polyfill';
 import commander from 'commander';
 
 import check from './check';
+import CLIError from './CLIError';
 import viewErrors from './viewErrors';
 
 export default function () {
@@ -28,11 +29,9 @@ export default function () {
   let fileQuery = getFileQuery();
 
   if (command === 'check') {
-    check(fileQuery)
-      .catch(error => console.error(error));
+    check(fileQuery).catch(handleError);
   } else if (command === 'view-errors') {
-    viewErrors()
-      .catch(error => console.error(error));
+    viewErrors().catch(handleError);
   } else {
     commander.outputHelp();
   }
@@ -57,4 +56,8 @@ function getFileQuery() {
       path: '.',
     };
   }
+}
+
+function handleError(error) {
+  console.error(CLIError.formatError(error));
 }
