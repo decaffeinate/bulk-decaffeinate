@@ -33,9 +33,17 @@ describe('simple-success', () => {
 });
 
 describe('simple-error', () => {
-  it('discovers two files', async function() {
+  it('discovers two files and fails on one', async function() {
     let stdout = await runCli('check -d test/examples/simple-error');
     assertIncludes(stdout, 'Trying decaffeinate on 2 files');
     assertIncludes(stdout, '1 files failed to convert');
+  });
+});
+
+describe('file-list', () => {
+  it('reads a path file containing two lines, and ignores the other file', async function() {
+    let stdout = await runCli('check --path-file test/examples/file-list/files-to-decaffeinate.txt');
+    assertIncludes(stdout, 'Trying decaffeinate on 3 files');
+    assertIncludes(stdout, 'All checks succeeded');
   });
 });
