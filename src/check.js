@@ -1,17 +1,26 @@
-import { exists, readdir, stat, writeFile } from 'mz/fs';
+import { exists, writeFile } from 'mz/fs';
 import { exec } from 'mz/child_process';
 import readline from 'mz/readline';
-import { join } from 'path';
+
+import getCoffeeFilesUnderPath from './getCoffeeFilesUnderPath';
+import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
 
 const NUM_CONCURRENT_PROCESSES = 4;
 
-export default async function check() {
-  console.log('Discovering .coffee files in the current directory...');
-  let coffeeFiles = await getCoffeeFilesUnderPath('.');
-  if (coffeeFiles.length === 0) {
-    console.log('No CoffeeScript files were found in the current directory.');
-    return;
+export default async function check(fileQuery) {
+  let coffeeFiles;
+  if (fileQuery.type === 'pathFile') {
+    coffeeFiles = await getCoffeeFilesFromPathFile(fileQuery.file);
+  } else if (fileQuery.type === 'recursiveSearch') {
+    let {path} = fileQuery;
+    console.log(`Discovering .coffee files under the directory "${path}"...`);
+    coffeeFiles = await getCoffeeFilesUnderPath(path);
+    if (coffeeFiles.length === 0) {
+      console.log('No CoffeeScript files were found in the current directory.');
+      return;
+    }
   }
+
   let decaffeinateResults = await tryDecaffeinateFiles(coffeeFiles);
   if (decaffeinateResults === null) {
     return;
@@ -19,23 +28,7 @@ export default async function check() {
   await printResults(decaffeinateResults);
 }
 
-async function getCoffeeFilesUnderPath(path) {
-  let resultFiles = [];
-  let children = await readdir(path);
-  for (let child of children) {
-    if (['node_modules', '.git'].includes(child)) {
-      continue;
-    }
-    let childPath = join(path, child);
-    if ((await stat(childPath)).isDirectory()) {
-      let subdirCoffeeFiles = await getCoffeeFilesUnderPath(childPath);
-      resultFiles.push(...subdirCoffeeFiles);
-    } else if (child.endsWith('.coffee')) {
-      resultFiles.push(childPath);
-    }
-  }
-  return resultFiles;
-}
+
 
 async function tryDecaffeinateFiles(coffeeFiles) {
   let decaffeinateCommand = await getDecaffeinateCommand();
