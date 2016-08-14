@@ -131,7 +131,7 @@ function getVerboseErrors(results) {
   let errorMessages = [];
   for (let {path, error} of results) {
     if (error) {
-      errorMessages.push(`***** ${path} failed:`);
+      errorMessages.push(`===== ${path}`);
       errorMessages.push(error);
     }
   }
