@@ -1,6 +1,5 @@
 {
   "name": "bulk-decaffeinate",
-  "version": "1.0.0",
   "description": "Run decaffeinate and related operations on a whole codebase, or just part of one.",
   "main": "dist/bulk-decaffeinate.js",
   "jsnext:main": "dist/bulk-decaffeinate.mjs",
@@ -13,11 +12,12 @@
     "build": "rollup -c",
     "lint": "eslint src test",
     "pretest": "npm run build",
-    "test": "mocha"
+    "test": "mocha",
+    "semantic-release": "semantic-release pre && npm publish && semantic-release post"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alangpierce/bulk-decaffeinate.git"
+    "url": "https://github.com/alangpierce/bulk-decaffeinate.git"
   },
   "keywords": [
     "coffeescript",
@@ -48,7 +48,8 @@
     "mocha": "^3.0.2",
     "rollup": "^0.34.5",
     "rollup-plugin-babel": "^2.6.1",
-    "rollup-plugin-json": "^2.0.1"
+    "rollup-plugin-json": "^2.0.1",
+    "semantic-release": "^4.3.5"
   },
   "dependencies": {
     "babel-polyfill": "^6.13.0",
