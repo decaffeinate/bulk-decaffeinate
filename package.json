@@ -9,8 +9,10 @@
     "bulk-decaffeinate": "./bin/bulk-decaffeinate"
   },
   "scripts": {
+    "prebuild": "npm run lint",
     "build": "rollup -c",
-    "lint": "eslint src",
+    "lint": "eslint src test",
+    "pretest": "npm run build",
     "test": "mocha"
   },
   "repository": {
@@ -40,6 +42,7 @@
     "babel-preset-es2015-rollup": "^1.1.1",
     "babel-register": "^6.11.6",
     "babelrc-rollup": "^2.0.0",
+    "decaffeinate": "^2.22.1",
     "eslint": "^3.2.2",
     "eslint-plugin-babel": "^3.3.0",
     "mocha": "^3.0.2",
