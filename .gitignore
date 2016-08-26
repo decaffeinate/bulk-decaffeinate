@@ -3,3 +3,4 @@ node_modules
 dist
 decaffeinate-errors.log
 decaffeinate-results.json
+test/tmp-projects

@@ -4,8 +4,12 @@ import 'babel-polyfill';
 import assert from 'assert';
 import { exec } from 'mz/child_process';
 
+let originalCwd = process.cwd();
+
 async function runCli(args) {
-  return (await exec(`bin/bulk-decaffeinate ${args}`)).toString();
+  return (await exec(`"${originalCwd}/bin/bulk-decaffeinate" \
+    --decaffeinate-path "${originalCwd}/node_modules/.bin/decaffeinate" \
+    ${args}`)).toString();
 }
 
 function assertIncludes(stdout, substr) {
@@ -13,6 +17,22 @@ function assertIncludes(stdout, substr) {
     stdout.includes(substr),
     `Expected stdout to include "${substr}".\n\nFull stdout:\n${stdout}`
   );
+}
+
+/**
+ * Run the given async function with
+ */
+async function runWithTemplateDir(exampleName, fn) {
+  try {
+    let suffix = Math.floor(Math.random() * 1000000000000);
+    let newDir = `./test/tmp-projects/${exampleName}-${suffix}`;
+    await exec(`mkdir -p "${newDir}"`);
+    await exec(`cp -r "./test/examples/${exampleName}" "${newDir}"`);
+    process.chdir(newDir);
+    await fn();
+  } finally {
+    process.chdir(originalCwd);
+  }
 }
 
 describe('basic CLI', () => {
@@ -29,6 +49,14 @@ describe('simple-success', () => {
     let stdout = await runCli('check -d test/examples/simple-success');
     assertIncludes(stdout, 'Trying decaffeinate on 2 files');
     assertIncludes(stdout, 'All checks succeeded');
+  });
+
+  it('runs files from the current directory', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      let stdout = await runCli('check');
+      assertIncludes(stdout, 'Trying decaffeinate on 2 files');
+      assertIncludes(stdout, 'All checks succeeded');
+    });
   });
 });
 

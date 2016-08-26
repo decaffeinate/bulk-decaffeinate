@@ -7,7 +7,12 @@ import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
 
 const NUM_CONCURRENT_PROCESSES = 4;
 
-export default async function check(fileQuery) {
+export default async function check(fileQuery, decaffeinatePath) {
+  let decaffeinateCommand = decaffeinatePath || await getDecaffeinateCommand();
+  if (decaffeinateCommand === null) {
+    return;
+  }
+
   let coffeeFiles;
   if (fileQuery.type === 'pathFile') {
     coffeeFiles = await getCoffeeFilesFromPathFile(fileQuery.file);
@@ -21,21 +26,11 @@ export default async function check(fileQuery) {
     }
   }
 
-  let decaffeinateResults = await tryDecaffeinateFiles(coffeeFiles);
-  if (decaffeinateResults === null) {
-    return;
-  }
+  let decaffeinateResults = await tryDecaffeinateFiles(coffeeFiles, decaffeinateCommand);
   await printResults(decaffeinateResults);
 }
 
-
-
-async function tryDecaffeinateFiles(coffeeFiles) {
-  let decaffeinateCommand = await getDecaffeinateCommand();
-  if (decaffeinateCommand === null) {
-    return null;
-  }
-
+async function tryDecaffeinateFiles(coffeeFiles, decaffeinateCommand) {
   let numProcessed = 0;
   let numFailures = 0;
   let numTotal = coffeeFiles.length;

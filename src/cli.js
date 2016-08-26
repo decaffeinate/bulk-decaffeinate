@@ -24,12 +24,16 @@ export default function () {
     .option('-d, --dir [path]',
       `A directory containing files to decaffeinate. All .coffee files in any
         subdirectory of this directory are considered for decaffeinate.`)
+    .option('--decaffeinate-path [path]',
+      `The path to the decaffeinate binary. If none is specified, it will be
+        automatically discovered from node_modules and then from the PATH.`)
     .parse(process.argv);
 
   let fileQuery = getFileQuery();
+  let decaffeinatePath = commander.decaffeinatePath;
 
   if (command === 'check') {
-    check(fileQuery).catch(handleError);
+    check(fileQuery, decaffeinatePath).catch(handleError);
   } else if (command === 'view-errors') {
     viewErrors().catch(handleError);
   } else {
