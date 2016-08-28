@@ -5,23 +5,19 @@ import resolveFileQuery from './resolveFileQuery';
 import runWithProgressBar from './runWithProgressBar';
 
 export default async function check(fileQuery, decaffeinatePath) {
-  let decaffeinateFn = await getDecaffeinateCommand(decaffeinatePath);
-  if (decaffeinateFn === null) {
-    return;
-  }
+  let {decaffeinateCheckFn} = await getDecaffeinateCommand(decaffeinatePath);
   let coffeeFiles = await resolveFileQuery(fileQuery);
-  let decaffeinateResults = await tryDecaffeinateFiles(coffeeFiles, decaffeinateFn);
+  let decaffeinateResults = await runWithProgressBar(
+    `Doing a dry run of decaffeinate on ${coffeeFiles.length} files...`,
+    coffeeFiles, decaffeinateCheckFn);
   await printResults(decaffeinateResults);
-}
-
-async function tryDecaffeinateFiles(coffeeFiles, decaffeinateFn) {
-  return await runWithProgressBar('Trying decaffeinate', coffeeFiles, decaffeinateFn);
 }
 
 async function printResults(results) {
   let errorResults = results.filter(r => r.error !== null);
   if (errorResults.length === 0) {
     console.log(`All checks succeeded! Decaffeinate can convert all ${results.length} files.`);
+    console.log('Run this command again with the convert command');
   } else {
     console.log(`${errorResults.length} files failed to convert:`);
     for (let result of errorResults) {

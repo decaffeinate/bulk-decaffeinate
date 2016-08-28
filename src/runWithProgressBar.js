@@ -1,23 +1,26 @@
 import pluralize from './pluralize';
-import runInParallel, { NUM_CONCURRENT_PROCESSES } from './runInParallel';
+import runInParallel from './runInParallel';
+
+const NUM_CONCURRENT_PROCESSES = 4;
 
 /**
  * Run the given command in parallel, showing a progress bar of results.
  */
-export default async function runWithProgressBar(commandName, files, asyncFn) {
+export default async function runWithProgressBar(
+    description, files, asyncFn, {runInSeries}={}) {
   let numProcessed = 0;
   let numFailures = 0;
   let numTotal = files.length;
-  console.log(
-    `${commandName} on ${pluralize(numTotal, 'file')} using ${NUM_CONCURRENT_PROCESSES} workers...`);
-  let results = await runInParallel(files, asyncFn, ({result}) => {
+  console.log(description);
+  let numConcurrentProcesses = runInSeries ? 1 : NUM_CONCURRENT_PROCESSES;
+  let results = await runInParallel(files, asyncFn, numConcurrentProcesses, ({result}) => {
     if (result.error) {
       numFailures++;
     }
     numProcessed++;
-    let errorString = numFailures === 0 ? '' : ` (${pluralize(numFailures, 'failures')} so far)`;
+    let errorString = numFailures === 0 ? '' : ` (${pluralize(numFailures, 'failure')} so far)`;
     process.stdout.write(`\r${numProcessed}/${numTotal}${errorString}`);
   });
-  process.stdout.write('\nDone!\n\n');
+  process.stdout.write('\n');
   return results;
 }

@@ -2,40 +2,48 @@ import { exec } from 'mz/child_process';
 import { exists } from 'mz/fs';
 import readline from 'mz/readline';
 
+import CLIError from './CLIError';
+
 /**
  * Return an async function that runs decaffeinate on a given CoffeeScript file.
  */
-export default async function getDecaffeinateFn(userProvidedCommand) {
+export default async function getDecaffeinateCommand(userProvidedCommand) {
   if (userProvidedCommand) {
-    return makeDecaffeinateFn(userProvidedCommand);
+    return makeDecaffeinateFns(userProvidedCommand);
   }
   let nodeModulesPath = './node_modules/.bin/decaffeinate';
   if (await exists(nodeModulesPath)) {
-    return makeDecaffeinateFn(nodeModulesPath);
+    return makeDecaffeinateFns(nodeModulesPath);
   } else {
     try {
       await exec('which decaffeinate');
-      return makeDecaffeinateFn('decaffeinate');
+      return makeDecaffeinateFns('decaffeinate');
     } catch (e) {
       console.log('decaffeinate binary not found on the PATH or in node_modules.');
       let rl = readline.createInterface(process.stdin, process.stdout);
       let answer = await rl.question('Run "npm install -g decaffeinate"? [Y/n] ');
       rl.close();
       if (answer.toLowerCase().startsWith('n')) {
-        console.log('decaffeinate must be installed.');
-        return null;
+        throw new CLIError('decaffeinate must be installed.');
       }
       console.log('Installing decaffeinate globally...');
       console.log((await exec('npm install -g decaffeinate'))[0]);
-      return makeDecaffeinateFn('decaffeinate');
+      return makeDecaffeinateFns('decaffeinate');
     }
   }
 }
 
-function makeDecaffeinateFn(decaffeinateCommand) {
+function makeDecaffeinateFns(decaffeinateCommand) {
+  return {
+    decaffeinateCheckFn: makeCLIFn(path => `${decaffeinateCommand} < '${path}'`),
+    decaffeinateFn: makeCLIFn(path => `${decaffeinateCommand} '${path}'`),
+  };
+}
+
+function makeCLIFn(commandByPath) {
   return async function(path) {
     try {
-      await exec(`${decaffeinateCommand} < '${path}'`);
+      await exec(commandByPath(path));
       return {path, error: null};
     } catch (e) {
       return {path, error: getStdout(e)};

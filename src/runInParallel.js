@@ -1,5 +1,3 @@
-export const NUM_CONCURRENT_PROCESSES = 4;
-
 /**
  * Run the given one-argument async function on an array of arguments, keeping a
  * logical worker pool to increase throughput without overloading the system.
@@ -10,7 +8,8 @@ export const NUM_CONCURRENT_PROCESSES = 4;
  *
  * An array of all results is returned at the end.
  */
-export default async function runInParallel(args, asyncFn, resultHandler) {
+export default async function runInParallel(
+    args, asyncFn, numConcurrentProcesses, resultHandler) {
   let results = [];
   let activePromises = {};
 
@@ -28,7 +27,7 @@ export default async function runInParallel(args, asyncFn, resultHandler) {
         result: await asyncFn(arg),
       };
     }();
-    if (Object.keys(activePromises).length >= NUM_CONCURRENT_PROCESSES) {
+    if (Object.keys(activePromises).length >= numConcurrentProcesses) {
       handleResult(await Promise.race(Object.values(activePromises)));
     }
   }

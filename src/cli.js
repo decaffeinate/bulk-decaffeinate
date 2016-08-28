@@ -2,6 +2,7 @@ import 'babel-polyfill';
 import commander from 'commander';
 
 import check from './check';
+import convert from './convert';
 import CLIError from './CLIError';
 import viewErrors from './viewErrors';
 
@@ -15,6 +16,8 @@ export default function () {
     check: Try decaffeinate on the specified files and generate a report of
       which files can be converted. By default, all .coffee files in the current
       directory are used.
+    convert: Run decaffeinate on the specified files and generate git commits
+      for the transition.
     view-errors: Open failures from the most recent run in an online repl.`)
     .action(commandArg => command = commandArg)
     .option('-p, --path-file [path]',
@@ -34,6 +37,8 @@ export default function () {
 
   if (command === 'check') {
     check(fileQuery, decaffeinatePath).catch(handleError);
+  } else if (command === 'convert') {
+    convert(fileQuery, decaffeinatePath).catch(handleError);
   } else if (command === 'view-errors') {
     viewErrors().catch(handleError);
   } else {
