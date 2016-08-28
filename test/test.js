@@ -81,6 +81,8 @@ describe('convert', () => {
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await exec('git init');
+      await exec('git config user.name "Sample User"');
+      await exec('git config user.email "sample@example.com"');
       await exec('git add -A');
       await exec('git commit -m "Initial commit"');
       let decaffeinateStdout = await runCli('convert');
