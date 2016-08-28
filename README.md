@@ -37,15 +37,8 @@ To open failures in the online repl, run "bulk-decaffeinate view-errors"
 
 ## Future plans
 
-This project is in early stages. Here are some things coming up:
-
-* Add a `convert` command that actually runs decaffeinate to convert a codebase.
-* Add a flexible way to specify which files should be checked/converted.
-* Automatically create git commits that properly preserve history.
 * Run follow-up commands like `eslint --fix` once decaffeinate finishes.
 * Allow running custom follow-up codemods.
-* Create backups of the `.coffee` files so you can easily compare before and
-  after.
 * When displaying errors, classify any known issues automatically and link to
   the corresponding GitHub issue.
 * Any other sanity checks, instructions, or help for running decaffeinate on a
