@@ -2,11 +2,12 @@ import { writeFile } from 'mz/fs';
 
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
+import pluralize from './util/pluralize';
 
 export default async function check(config) {
   let {filesToProcess, decaffeinatePath} = config;
   let decaffeinateResults = await runWithProgressBar(
-    `Doing a dry run of decaffeinate on ${filesToProcess.length} files...`,
+    `Doing a dry run of decaffeinate on ${pluralize(filesToProcess.length, 'file')}...`,
     filesToProcess, makeCLIFn(path => `${decaffeinatePath} < ${path}`));
   await printResults(decaffeinateResults);
 }
@@ -14,10 +15,10 @@ export default async function check(config) {
 async function printResults(results) {
   let errorResults = results.filter(r => r.error !== null);
   if (errorResults.length === 0) {
-    console.log(`All checks succeeded! Decaffeinate can convert all ${results.length} files.`);
+    console.log(`All checks succeeded! Decaffeinate can convert all ${pluralize(results.length, 'file')}.`);
     console.log('Run this command again with the convert command');
   } else {
-    console.log(`${errorResults.length} files failed to convert:`);
+    console.log(`${pluralize(errorResults.length, 'file')} failed to convert:`);
     for (let result of errorResults) {
       console.log(result.path);
     }

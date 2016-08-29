@@ -65,7 +65,7 @@ describe('simple-error', () => {
   it('discovers two files and fails on one', async function() {
     let stdout = await runCli('check -d test/examples/simple-error');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
-    assertIncludes(stdout, '1 files failed to convert');
+    assertIncludes(stdout, '1 file failed to convert');
   });
 });
 
@@ -74,6 +74,16 @@ describe('file-list', () => {
     let stdout = await runCli('check --path-file test/examples/file-list/files-to-decaffeinate.txt');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 3 files...');
     assertIncludes(stdout, 'All checks succeeded');
+  });
+});
+
+describe('config files', () => {
+  it('reads the list of files from a config file', async function() {
+    await runWithTemplateDir('simple-config-file', async function() {
+      let stdout = await runCli('check');
+      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
+      assertIncludes(stdout, 'All checks succeeded');
+    });
   });
 });
 
