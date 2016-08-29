@@ -1,19 +1,16 @@
 import { exec } from 'mz/child_process';
 
-import CLIError from './CLIError';
-import getDecaffeinateCommand from './getDecaffeinateCommand';
-import resolveFileQuery from './resolveFileQuery';
-import runWithProgressBar from './runWithProgressBar';
+import makeCLIFn from './runner/makeCLIFn';
+import runWithProgressBar from './runner/runWithProgressBar';
+import CLIError from './util/CLIError';
 
-export default async function convert(fileQuery, decaffeinatePath) {
-  let {decaffeinateCheckFn, decaffeinateFn} =
-    await getDecaffeinateCommand(decaffeinatePath);
-  let coffeeFiles = await resolveFileQuery(fileQuery);
+export default async function convert(config) {
+  let {filesToProcess: coffeeFiles, decaffeinatePath} = config;
   let baseFiles = getBaseFiles(coffeeFiles);
 
   let decaffeinateResults = await runWithProgressBar(
     'Verifying that decaffeinate can successfully convert these files...',
-    coffeeFiles, decaffeinateCheckFn);
+    coffeeFiles, makeCLIFn(path => `${decaffeinatePath} < ${path}`));
   if (decaffeinateResults.filter(r => r.error !== null).length > 0) {
     throw new CLIError(`\
 Some files could not be convered with decaffeinate.
@@ -21,10 +18,8 @@ Re-run with the "check" command for more details.`);
   }
 
   async function runCommand(description, commandByPath, {runInSeries}={}) {
-    await runWithProgressBar(description, baseFiles, async function(path) {
-      await exec(commandByPath(path));
-      return {error: null};
-    }, {runInSeries});
+    await runWithProgressBar(
+      description, baseFiles, makeCLIFn(commandByPath), {runInSeries});
   }
 
   await runCommand(
@@ -48,7 +43,7 @@ Re-run with the "check" command for more details.`);
   await runWithProgressBar(
     'Running decaffeinate on all files...',
     coffeeFiles,
-    decaffeinateFn
+    makeCLIFn(path => `${decaffeinatePath} ${path}`)
   );
 
   await runCommand(

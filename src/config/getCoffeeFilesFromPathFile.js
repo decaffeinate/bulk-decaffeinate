@@ -1,6 +1,6 @@
 import { exists, readFile } from 'mz/fs';
 
-import CLIError from './CLIError';
+import CLIError from '../util/CLIError';
 
 /**
  * Read a list of .coffee files from a file and return it. Verify that all files

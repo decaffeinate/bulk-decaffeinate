@@ -1,5 +1,5 @@
-import pluralize from './pluralize';
 import runInParallel from './runInParallel';
+import pluralize from '../util/pluralize';
 
 const NUM_CONCURRENT_PROCESSES = 4;
 
