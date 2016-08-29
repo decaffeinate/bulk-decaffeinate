@@ -1,15 +1,13 @@
 import { writeFile } from 'mz/fs';
 
-import getDecaffeinateCommand from './getDecaffeinateCommand';
-import resolveFileQuery from './resolveFileQuery';
-import runWithProgressBar from './runWithProgressBar';
+import makeCLIFn from './runner/makeCLIFn';
+import runWithProgressBar from './runner/runWithProgressBar';
 
-export default async function check(fileQuery, decaffeinatePath) {
-  let {decaffeinateCheckFn} = await getDecaffeinateCommand(decaffeinatePath);
-  let coffeeFiles = await resolveFileQuery(fileQuery);
+export default async function check(config) {
+  let {filesToProcess, decaffeinatePath} = config;
   let decaffeinateResults = await runWithProgressBar(
-    `Doing a dry run of decaffeinate on ${coffeeFiles.length} files...`,
-    coffeeFiles, decaffeinateCheckFn);
+    `Doing a dry run of decaffeinate on ${filesToProcess.length} files...`,
+    filesToProcess, makeCLIFn(path => `${decaffeinatePath} < ${path}`));
   await printResults(decaffeinateResults);
 }
 
@@ -36,8 +34,17 @@ function getVerboseErrors(results) {
   for (let {path, error} of results) {
     if (error) {
       errorMessages.push(`===== ${path}`);
-      errorMessages.push(error);
+      errorMessages.push(getStdout(error));
     }
   }
   return errorMessages.join('\n');
+}
+
+function getStdout(message) {
+  let matchString = '\nstdin: ';
+  if (message.indexOf(matchString) !== -1) {
+    return message.substring(message.indexOf(matchString) + matchString.length);
+  } else {
+    return message.substring(message.indexOf('\n') + 1);
+  }
 }

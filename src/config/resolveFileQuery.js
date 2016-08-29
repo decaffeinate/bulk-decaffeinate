@@ -1,6 +1,6 @@
-import CLIError from './CLIError';
 import getCoffeeFilesUnderPath from './getCoffeeFilesUnderPath';
 import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
+import CLIError from '../util/CLIError';
 
 export default async function resolveFileQuery(fileQuery) {
   if (fileQuery.type === 'pathFile') {

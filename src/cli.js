@@ -2,8 +2,9 @@ import 'babel-polyfill';
 import commander from 'commander';
 
 import check from './check';
+import resolveConfig from './config/resolveConfig';
 import convert from './convert';
-import CLIError from './CLIError';
+import CLIError from './util/CLIError';
 import viewErrors from './viewErrors';
 
 export default function () {
@@ -32,41 +33,23 @@ export default function () {
         automatically discovered from node_modules and then from the PATH.`)
     .parse(process.argv);
 
-  let fileQuery = getFileQuery();
-  let decaffeinatePath = commander.decaffeinatePath;
-
-  if (command === 'check') {
-    check(fileQuery, decaffeinatePath).catch(handleError);
-  } else if (command === 'convert') {
-    convert(fileQuery, decaffeinatePath).catch(handleError);
-  } else if (command === 'view-errors') {
-    viewErrors().catch(handleError);
-  } else {
-    commander.outputHelp();
-  }
+  runCommand(command);
 }
 
-function getFileQuery() {
-  let pathFile = commander.pathFile;
-  let dir = commander.dir;
-  if (pathFile) {
-    return {
-      type: 'pathFile',
-      file: pathFile,
-    };
-  } else if (dir) {
-    return {
-      type: 'recursiveSearch',
-      path: dir,
-    };
-  } else {
-    return {
-      type: 'recursiveSearch',
-      path: '.',
-    };
+async function runCommand(command) {
+  try {
+    if (command === 'check') {
+      let config = await resolveConfig(commander);
+      await check(config);
+    } else if (command === 'convert') {
+      let config = await resolveConfig(commander);
+      await convert(config);
+    } else if (command === 'view-errors') {
+      await viewErrors();
+    } else {
+      commander.outputHelp();
+    }
+  } catch (e) {
+    console.error(CLIError.formatError(e));
   }
-}
-
-function handleError(error) {
-  console.error(CLIError.formatError(error));
 }
