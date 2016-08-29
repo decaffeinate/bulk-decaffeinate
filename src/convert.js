@@ -3,6 +3,7 @@ import { exec } from 'mz/child_process';
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
+import pluralize from './util/pluralize';
 
 export default async function convert(config) {
   let {filesToProcess: coffeeFiles, decaffeinatePath} = config;
@@ -32,7 +33,7 @@ Re-run with the "check" command for more details.`);
     {runInSeries: true});
 
   let renameCommitMsg =
-    `Decaffeinate: Rename ${baseFiles.length} files from .coffee to .js`;
+    `Decaffeinate: Rename ${pluralize(baseFiles.length, 'file')} from .coffee to .js`;
   console.log(`Generating the first commit: "${renameCommitMsg}"...`);
   await exec(`git commit -m "${renameCommitMsg}"`);
 
@@ -56,11 +57,11 @@ Re-run with the "check" command for more details.`);
     {runInSeries: true});
 
   let decaffeinateCommitMsg =
-    `Decaffeinate: Convert ${baseFiles.length} files to JS`;
+    `Decaffeinate: Convert ${pluralize(baseFiles.length, 'file')} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
   await exec(`git commit -m "${decaffeinateCommitMsg}"`);
   
-  console.log(`Successfully ran decaffeinate on ${baseFiles.length} files.`);
+  console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
 }
 
 function getBaseFiles(coffeeFiles) {

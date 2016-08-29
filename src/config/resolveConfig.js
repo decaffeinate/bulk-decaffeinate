@@ -1,5 +1,5 @@
 import { exec } from 'mz/child_process';
-import { exists } from 'mz/fs';
+import { exists, readdir, readFile, stat } from 'mz/fs';
 import readline from 'mz/readline';
 
 import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
@@ -12,7 +12,19 @@ import CLIError from '../util/CLIError';
  * list of files to process and inferring any paths if necessary.
  */
 export default async function resolveConfig(commander) {
-  let config = getCLIParamsConfig(commander);
+  let config = {};
+
+  let currentDirFiles = await readdir('.');
+  currentDirFiles.sort();
+  for (let filename of currentDirFiles) {
+    if (filename.startsWith('bulk-decaffeinate')
+        && filename.endsWith('.json')
+        && !(await stat(filename)).isDirectory()) {
+      let newConfig = JSON.parse(await readFile(filename));
+      config = Object.assign(config, newConfig);
+    }
+  }
+  config = Object.assign(config, getCLIParamsConfig(commander));
   return {
     filesToProcess: await resolveFilesToProcess(config),
     decaffeinatePath: await resolveDecaffeinatePath(config),
@@ -38,7 +50,10 @@ function getCLIParamsConfig(commander) {
 }
 
 async function resolveFilesToProcess(config) {
-  let {pathFile, searchDirectory} = config;
+  let {filesToProcess, pathFile, searchDirectory} = config;
+  if (filesToProcess) {
+    return filesToProcess;
+  }
   if (pathFile) {
     return await getCoffeeFilesFromPathFile(pathFile);
   }
