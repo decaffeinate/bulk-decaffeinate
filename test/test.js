@@ -3,12 +3,14 @@ import 'babel-polyfill';
 
 import assert from 'assert';
 import { exec } from 'mz/child_process';
+import { readFile } from 'mz/fs';
 
 let originalCwd = process.cwd();
 
 async function runCli(args) {
   return (await exec(`"${originalCwd}/bin/bulk-decaffeinate" \
     --decaffeinate-path "${originalCwd}/node_modules/.bin/decaffeinate" \
+    --eslint-path "${originalCwd}/node_modules/.bin/eslint" \
     ${args}`)).toString();
 }
 
@@ -17,6 +19,11 @@ function assertIncludes(stdout, substr) {
     stdout.includes(substr),
     `Expected stdout to include "${substr}".\n\nFull stdout:\n${stdout}`
   );
+}
+
+async function assertFileContents(path, expectedContents) {
+  let contents = (await readFile(path)).toString();
+  assert.equal(contents, expectedContents);
 }
 
 /**
@@ -88,13 +95,17 @@ describe('config files', () => {
 });
 
 describe('convert', () => {
+  async function initGitRepo() {
+    await exec('git init');
+    await exec('git config user.name "Sample User"');
+    await exec('git config user.email "sample@example.com"');
+    await exec('git add -A');
+    await exec('git commit -m "Initial commit"');
+  }
+
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
-      await exec('git init');
-      await exec('git config user.name "Sample User"');
-      await exec('git config user.email "sample@example.com"');
-      await exec('git add -A');
-      await exec('git commit -m "Initial commit"');
+      await initGitRepo();
       let decaffeinateStdout = await runCli('convert');
       assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
 
@@ -103,6 +114,23 @@ describe('convert', () => {
 Decaffeinate: Convert 2 files to JS
 Decaffeinate: Rename 2 files from .coffee to .js
 Initial commit`);
+    });
+  });
+
+  it('runs eslint, applying fixes and disabling existing issues', async function() {
+    await runWithTemplateDir('eslint-fix-test', async function() {
+      await initGitRepo();
+      let decaffeinateStdout = await runCli('convert');
+      assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
+
+      await assertFileContents('./A.js', `\
+/* eslint-disable
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+const x = 2;
+`);
     });
   });
 });
