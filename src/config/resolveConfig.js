@@ -5,6 +5,7 @@ import readline from 'mz/readline';
 import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
 import getCoffeeFilesUnderPath from './getCoffeeFilesUnderPath';
 import CLIError from '../util/CLIError';
+import execLive from '../util/execLive';
 
 /**
  * Resolve the configuration from a number of sources: any number of config
@@ -106,7 +107,8 @@ async function resolveBinary(binaryName) {
         throw new CLIError(`${binaryName} must be installed.`);
       }
       console.log(`Installing ${binaryName} globally...`);
-      console.log((await exec(`npm install -g ${binaryName}`))[0]);
+      await execLive(`npm install -g ${binaryName}`);
+      console.log(`Successfully installed ${binaryName}\n`);
       return binaryName;
     }
   }
