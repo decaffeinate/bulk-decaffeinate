@@ -4,15 +4,16 @@ import { readFile, writeFile } from 'mz/fs';
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
+import execLive from './util/execLive';
 import pluralize from './util/pluralize';
 
 export default async function convert(config) {
-  let {filesToProcess: coffeeFiles, decaffeinatePath} = config;
+  let coffeeFiles = config.filesToProcess;
   let baseFiles = getBaseFiles(coffeeFiles);
 
   let decaffeinateResults = await runWithProgressBar(
     'Verifying that decaffeinate can successfully convert these files...',
-    coffeeFiles, makeCLIFn(path => `${decaffeinatePath} < ${path}`));
+    coffeeFiles, makeCLIFn(path => `${config.decaffeinatePath} < ${path}`));
   if (decaffeinateResults.filter(r => r.error !== null).length > 0) {
     throw new CLIError(`\
 Some files could not be convered with decaffeinate.
@@ -46,7 +47,7 @@ Re-run with the "check" command for more details.`);
   await runWithProgressBar(
     'Running decaffeinate on all files...',
     coffeeFiles,
-    makeCLIFn(path => `${decaffeinatePath} ${path}`)
+    makeCLIFn(path => `${config.decaffeinatePath} ${path}`)
   );
 
   await runCommand(
@@ -62,6 +63,14 @@ Re-run with the "check" command for more details.`);
     `decaffeinate: Convert ${pluralize(baseFiles.length, 'file')} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
   await exec(`git commit -m "${decaffeinateCommitMsg}" --author "${gitAuthor}"`);
+
+  if (config.jscodeshiftScripts) {
+    let jsFilenames = baseFiles.map(f => `${f}.js`).join(' ');
+    for (let scriptPath of config.jscodeshiftScripts) {
+      console.log(`Running jscodeshift script ${scriptPath}...`);
+      await execLive(`${config.jscodeshiftPath} -t ${scriptPath} ${jsFilenames}`);
+    }
+  }
 
   await runWithProgressBar(
     'Running eslint --fix on all files...', baseFiles, makeEslintFixFn(config));
