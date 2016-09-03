@@ -101,7 +101,7 @@ function makeEslintFixFn(config) {
       `${config.eslintPath} --fix --format json ${path}.js; :`))[0];
     let eslintOutput = JSON.parse(eslintOutputStr);
     let ruleIds = eslintOutput[0].messages.map(message => message.ruleId);
-    ruleIds.sort();
+    ruleIds = Array.from(new Set(ruleIds)).sort();
     await prependToFile(`${path}.js`, `\
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
@@ -109,7 +109,7 @@ function makeEslintFixFn(config) {
     if (ruleIds.length > 0) {
       await prependToFile(`${path}.js`, `\
 /* eslint-disable
-${ruleIds.map(ruleId => `    ${ruleId},`)}
+${ruleIds.map(ruleId => `    ${ruleId},`).join('\n')}
 */
 `);
     }
