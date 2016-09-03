@@ -128,11 +128,14 @@ Sample User <sample@example.com> Initial commit
 
       await assertFileContents('./A.js', `\
 /* eslint-disable
+    no-console,
     no-unused-vars,
 */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
 const x = 2;
+const y = 3;
+console.log(x);
 `);
     });
   });
