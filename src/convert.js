@@ -33,10 +33,11 @@ Re-run with the "check" command for more details.`);
     p => `git mv ${p}.coffee ${p}.js`,
     {runInSeries: true});
 
+  let gitAuthor = await getGitAuthor();
   let renameCommitMsg =
     `Decaffeinate: Rename ${pluralize(baseFiles.length, 'file')} from .coffee to .js`;
   console.log(`Generating the first commit: "${renameCommitMsg}"...`);
-  await exec(`git commit -m "${renameCommitMsg}"`);
+  await exec(`git commit -m "${renameCommitMsg}" --author "${gitAuthor}"`);
 
   await runCommand(
     'Moving files back...',
@@ -60,7 +61,7 @@ Re-run with the "check" command for more details.`);
   let decaffeinateCommitMsg =
     `Decaffeinate: Convert ${pluralize(baseFiles.length, 'file')} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
-  await exec(`git commit -m "${decaffeinateCommitMsg}"`);
+  await exec(`git commit -m "${decaffeinateCommitMsg}" --author "${gitAuthor}"`);
 
   await runWithProgressBar(
     'Running eslint --fix on all files...', baseFiles, makeEslintFixFn(config));
@@ -73,7 +74,7 @@ Re-run with the "check" command for more details.`);
   let postProcessCommitMsg =
     `Decaffeinate: Run post-processing cleanups on ${pluralize(baseFiles.length, 'file')}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
-  await exec(`git commit -m "${postProcessCommitMsg}"`);
+  await exec(`git commit -m "${postProcessCommitMsg}" --author "${gitAuthor}"`);
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
 }
@@ -85,6 +86,11 @@ function getBaseFiles(coffeeFiles) {
     }
     return coffeeFile.substring(0, coffeeFile.length - '.coffee'.length);
   });
+}
+
+async function getGitAuthor() {
+  let userEmail = (await exec('git config user.email'))[0];
+  return `Decaffeinate <${userEmail}>`;
 }
 
 function makeEslintFixFn(config) {
