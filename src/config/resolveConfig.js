@@ -21,8 +21,13 @@ export default async function resolveConfig(commander) {
     if (filename.startsWith('bulk-decaffeinate')
         && filename.endsWith('.json')
         && !(await stat(filename)).isDirectory()) {
-      let newConfig = JSON.parse(await readFile(filename));
-      config = Object.assign(config, newConfig);
+      try {
+        let newConfig = JSON.parse(await readFile(filename));
+        config = Object.assign(config, newConfig);
+      } catch (e) {
+        throw new CLIError(
+          `Error reading file ${filename}. Make sure it is a valid JSON file.`);
+      }
     }
   }
   config = Object.assign(config, getCLIParamsConfig(commander));
