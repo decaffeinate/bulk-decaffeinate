@@ -33,7 +33,9 @@ export default async function resolveConfig(commander) {
   config = Object.assign(config, getCLIParamsConfig(commander));
   return {
     filesToProcess: await resolveFilesToProcess(config),
+    jscodeshiftScripts: config.jscodeshiftScripts,
     decaffeinatePath: await resolveDecaffeinatePath(config),
+    jscodeshiftPath: await resolveJscodeshiftPath(config),
     eslintPath: await resolveEslintPath(config),
   };
 }
@@ -42,7 +44,7 @@ export default async function resolveConfig(commander) {
  * Fill in a configuration from the CLI arguments.
  */
 function getCLIParamsConfig(commander) {
-  let {pathFile, dir, decaffeinatePath, eslintPath} = commander;
+  let {pathFile, dir, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
   let config = {};
   if (dir) {
     config.searchDirectory = dir;
@@ -52,6 +54,9 @@ function getCLIParamsConfig(commander) {
   }
   if (decaffeinatePath) {
     config.decaffeinatePath = decaffeinatePath;
+  }
+  if (jscodeshiftPath) {
+    config.jscodeshiftPath = jscodeshiftPath;
   }
   if (eslintPath) {
     config.eslintPath = eslintPath;
@@ -73,10 +78,6 @@ async function resolveFilesToProcess(config) {
   return await getCoffeeFilesUnderPath('.');
 }
 
-/**
- * Determine the decaffeinate path (the shell command) to use for running
- * decaffeinate.
- */
 async function resolveDecaffeinatePath(config) {
   if (config.decaffeinatePath) {
     return config.decaffeinatePath;
@@ -84,10 +85,18 @@ async function resolveDecaffeinatePath(config) {
   return await resolveBinary('decaffeinate');
 }
 
-/**
- * Determine the decaffeinate path (the shell command) to use for running
- * decaffeinate.
- */
+async function resolveJscodeshiftPath(config) {
+  // jscodeshift is an optional step, so don't prompt to install it if we won't
+  // be using it.
+  if (!config.jscodeshiftScripts) {
+    return null;
+  }
+  if (config.jscodeshiftPath) {
+    return config.jscodeshiftPath;
+  }
+  return await resolveBinary('jscodeshift');
+}
+
 async function resolveEslintPath(config) {
   if (config.eslintPath) {
     return config.eslintPath;
@@ -95,6 +104,10 @@ async function resolveEslintPath(config) {
   return await resolveBinary('eslint');
 }
 
+/**
+ * Determine the shell command that can be used to run the given binary,
+ * prompting to globally install it if necessary.
+ */
 async function resolveBinary(binaryName) {
   let nodeModulesPath = `./node_modules/.bin/${binaryName}`;
   if (await exists(nodeModulesPath)) {

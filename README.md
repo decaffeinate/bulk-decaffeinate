@@ -76,11 +76,14 @@ Here's what `convert` does in more detail:
      changes as a merge commit rather than squashing the commits together).
   4. It runs decaffeinate on all files and gets rid of the .coffee files, then
      generates a commit.
-  5. It runs `eslint --fix` on all files, which applies some style fixes
+  5. If the `jscodeshiftScripts` config value is specified, it runs
+     [jscodeshift](https://github.com/facebook/jscodeshift) with those scripts
+     in the order specified.
+  6. It runs `eslint --fix` on all files, which applies some style fixes
      according to your lint rules. For any remaining lint failures, it puts a
      comment at the top of the file disabling those specific lint rules and
      leaves a TODO comment to fix any remaining style issues.
-  6. All post-decaffeinate changes are committed as a third commit.
+  7. All post-decaffeinate changes are committed as a third commit.
 
 In all generated commits, "decaffeinate" is used as the author name (but not the
 email address). This makes it clear to people using `git blame` that the file
@@ -115,6 +118,13 @@ The following config keys can be specified:
 The `filesToProcess` setting has highest precedence, then `pathFile`, then
 `searchDirectory`.
 
+### Other configuration
+
+* `jscodeshiftScripts`: an optional array of paths to
+  [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
+  decaffeinate. This is useful to automate any cleanups to convert the output of
+  decaffeinate to code matching your JS style.
+
 ### Configuring paths to external tools
 
 Rather than having bulk-decaffeinate automatically discover the relevant
@@ -126,6 +136,7 @@ specify these paths in the config file.
 These keys can be specified:
 
 * `decaffeinatePath`: the path to the decaffeinate binary.
+* `jscodeshiftPath`: the path to the jscodeshift binary.
 * `eslintPath`: the path to the eslint binary.
 
 ## Future plans

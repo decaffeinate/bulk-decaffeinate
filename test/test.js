@@ -10,6 +10,7 @@ let originalCwd = process.cwd();
 async function runCli(args) {
   return (await exec(`"${originalCwd}/bin/bulk-decaffeinate" \
     --decaffeinate-path "${originalCwd}/node_modules/.bin/decaffeinate" \
+    --jscodeshift-path "${originalCwd}/node_modules/.bin/jscodeshift" \
     --eslint-path "${originalCwd}/node_modules/.bin/eslint" \
     ${args}`))[0];
 }
@@ -117,6 +118,24 @@ decaffeinate <sample@example.com> decaffeinate: Rename 2 files from .coffee to .
 Sample User <sample@example.com> Initial commit
 `
       );
+    });
+  });
+
+  it('runs jscodeshift', async function() {
+    await runWithTemplateDir('jscodeshift-test', async function() {
+      await initGitRepo();
+      let decaffeinateStdout = await runCli('convert');
+      assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
+
+      await assertFileContents('./A.js', `\
+/* eslint-disable
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+let nameAfter = 3;
+let notChanged = 4;
+`);
     });
   });
 
