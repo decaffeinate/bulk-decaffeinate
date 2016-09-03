@@ -1,4 +1,5 @@
 import { exec } from 'mz/child_process';
+import { readFile, writeFile } from 'mz/fs';
 
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
@@ -60,7 +61,20 @@ Re-run with the "check" command for more details.`);
     `Decaffeinate: Convert ${pluralize(baseFiles.length, 'file')} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
   await exec(`git commit -m "${decaffeinateCommitMsg}"`);
-  
+
+  await runWithProgressBar(
+    'Running eslint --fix on all files...', baseFiles, makeEslintFixFn(config));
+
+  await runCommand(
+    'Running git add on all files again...',
+    p => `git add ${p}.js`,
+    {runInSeries: true});
+
+  let postProcessCommitMsg =
+    `Decaffeinate: Run post-processing cleanups on ${pluralize(baseFiles.length, 'file')}`;
+  console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
+  await exec(`git commit -m "${postProcessCommitMsg}"`);
+
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
 }
 
@@ -71,4 +85,34 @@ function getBaseFiles(coffeeFiles) {
     }
     return coffeeFile.substring(0, coffeeFile.length - '.coffee'.length);
   });
+}
+
+function makeEslintFixFn(config) {
+  return async function runEslint(path) {
+    // Ignore the eslint exit code; it gives useful stdout in the same format
+    // regardless of the exit code.
+    let eslintOutputStr = (await exec(
+      `${config.eslintPath} --fix --format json ${path}.js; :`))[0];
+    let eslintOutput = JSON.parse(eslintOutputStr);
+    let ruleIds = eslintOutput[0].messages.map(message => message.ruleId);
+    ruleIds.sort();
+    await prependToFile(`${path}.js`, `\
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+`);
+    if (ruleIds.length > 0) {
+      await prependToFile(`${path}.js`, `\
+/* eslint-disable
+${ruleIds.map(ruleId => `    ${ruleId},`)}
+*/
+`);
+    }
+    return {path, error: null};
+  };
+}
+
+async function prependToFile(path, prependText) {
+  let contents = await readFile(path);
+  contents = prependText + contents;
+  await writeFile(path, contents);
 }

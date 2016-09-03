@@ -31,6 +31,9 @@ export default function () {
     .option('--decaffeinate-path [path]',
       `The path to the decaffeinate binary. If none is specified, it will be
         automatically discovered from node_modules and then from the PATH.`)
+    .option('--eslint-path [path]',
+      `The path to the eslint binary. If none is specified, it will be
+        automatically discovered from node_modules and then from the PATH.`)
     .parse(process.argv);
 
   runCommand(command);
