@@ -15,7 +15,7 @@ export default async function check(config) {
 async function printResults(results) {
   let errorResults = results.filter(r => r.error !== null);
   if (errorResults.length === 0) {
-    console.log(`All checks succeeded! Decaffeinate can convert all ${pluralize(results.length, 'file')}.`);
+    console.log(`All checks succeeded! decaffeinate can convert all ${pluralize(results.length, 'file')}.`);
     console.log('Run this command again with the convert command');
   } else {
     console.log(`${pluralize(errorResults.length, 'file')} failed to convert:`);
