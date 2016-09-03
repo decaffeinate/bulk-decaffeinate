@@ -111,9 +111,9 @@ describe('convert', () => {
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
       assert.equal(logStdout, `\
-Decaffeinate <sample@example.com> Decaffeinate: Run post-processing cleanups on 2 files
-Decaffeinate <sample@example.com> Decaffeinate: Convert 2 files to JS
-Decaffeinate <sample@example.com> Decaffeinate: Rename 2 files from .coffee to .js
+decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on 2 files
+decaffeinate <sample@example.com> decaffeinate: Convert 2 files to JS
+decaffeinate <sample@example.com> decaffeinate: Rename 2 files from .coffee to .js
 Sample User <sample@example.com> Initial commit
 `
       );
