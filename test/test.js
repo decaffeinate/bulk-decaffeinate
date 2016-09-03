@@ -11,7 +11,7 @@ async function runCli(args) {
   return (await exec(`"${originalCwd}/bin/bulk-decaffeinate" \
     --decaffeinate-path "${originalCwd}/node_modules/.bin/decaffeinate" \
     --eslint-path "${originalCwd}/node_modules/.bin/eslint" \
-    ${args}`)).toString();
+    ${args}`))[0];
 }
 
 function assertIncludes(stdout, substr) {
@@ -109,11 +109,14 @@ describe('convert', () => {
       let decaffeinateStdout = await runCli('convert');
       assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
 
-      let logStdout = (await exec('git log --pretty=%s')).toString();
-      assertIncludes(logStdout, `\
-Decaffeinate: Convert 2 files to JS
-Decaffeinate: Rename 2 files from .coffee to .js
-Initial commit`);
+      let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
+      assert.equal(logStdout, `\
+Decaffeinate <sample@example.com> Decaffeinate: Run post-processing cleanups on 2 files
+Decaffeinate <sample@example.com> Decaffeinate: Convert 2 files to JS
+Decaffeinate <sample@example.com> Decaffeinate: Rename 2 files from .coffee to .js
+Sample User <sample@example.com> Initial commit
+`
+      );
     });
   });
 

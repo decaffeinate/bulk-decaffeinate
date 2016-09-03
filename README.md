@@ -82,6 +82,11 @@ Here's what `convert` does in more detail:
      leaves a TODO comment to fix any remaining style issues.
   6. All post-decaffeinate changes are committed as a third commit.
 
+In all generated commits, "Decaffeinate" is used as the author name (but not the
+email address). This makes it clear to people using `git blame` that the file
+was generated using decaffeinate, and not necessarily authored by the person who
+happened to run the decaffeinate script.
+
 If you want to see the full details, the [source code](src/convert.js) should
 hopefully be fairly readable.
 
