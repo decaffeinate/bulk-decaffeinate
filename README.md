@@ -1,5 +1,9 @@
 # bulk-decaffeinate
 
+[![Build Status](https://travis-ci.org/alangpierce/bulk-decaffeinate.svg?branch=master)](https://travis-ci.org/alangpierce/bulk-decaffeinate)
+[![npm version](https://badge.fury.io/js/bulk-decaffeinate.svg)](https://www.npmjs.com/package/bulk-decaffeinate)
+[![MIT License](https://img.shields.io/npm/l/express.svg?maxAge=2592000)](LICENSE)
+
 A tool, backed by [decaffeinate](http://decaffeinate-project.org/), to help you
 convert some or all of a CoffeeScript codebase to JavaScript.
 
