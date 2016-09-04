@@ -6,7 +6,6 @@ import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
 import getCoffeeFilesUnderPath from './getCoffeeFilesUnderPath';
 import CLIError from '../util/CLIError';
 import execLive from '../util/execLive';
-
 /**
  * Resolve the configuration from a number of sources: any number of config
  * files and CLI options. Then "canonicalize" the config, e.g. by resolving the
@@ -31,8 +30,10 @@ export default async function resolveConfig(commander) {
     }
   }
   config = Object.assign(config, getCLIParamsConfig(commander));
+  let filesToProcess = await resolveFilesToProcess(config);
+  await validateFilesToProcess(filesToProcess);
   return {
-    filesToProcess: await resolveFilesToProcess(config),
+    filesToProcess,
     jscodeshiftScripts: config.jscodeshiftScripts,
     mochaEnvFilePattern: config.mochaEnvFilePattern,
     decaffeinatePath: await resolveDecaffeinatePath(config),
@@ -129,6 +130,18 @@ async function resolveBinary(binaryName) {
       await execLive(`npm install -g ${binaryName}`);
       console.log(`Successfully installed ${binaryName}\n`);
       return binaryName;
+    }
+  }
+}
+
+async function validateFilesToProcess(filesToProcess) {
+  for (let file of filesToProcess) {
+    if (!file.endsWith('.coffee')) {
+      throw new CLIError(`The file ${file} did not end with .coffee.`);
+    }
+    let jsFile = file.substring(0, file.length - '.coffee'.length) + '.js';
+    if (await exists(jsFile)) {
+      throw new CLIError(`The file ${jsFile} already exists.`);
     }
   }
 }
