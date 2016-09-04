@@ -141,11 +141,3 @@ These keys can be specified:
 * `decaffeinatePath`: the path to the decaffeinate binary.
 * `jscodeshiftPath`: the path to the jscodeshift binary.
 * `eslintPath`: the path to the eslint binary.
-
-## Future plans
-
-* Allow running custom follow-up codemods.
-* When displaying errors, classify any known issues automatically and link to
-  the corresponding GitHub issue.
-* Any other sanity checks, instructions, or help for running decaffeinate on a
-  real-world codebase.
