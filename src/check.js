@@ -16,7 +16,7 @@ async function printResults(results) {
   let errorResults = results.filter(r => r.error !== null);
   if (errorResults.length === 0) {
     console.log(`All checks succeeded! decaffeinate can convert all ${pluralize(results.length, 'file')}.`);
-    console.log('Run this command again with the convert command');
+    console.log('Run this command again with the convert command to convert the files to JavaScript.');
   } else {
     console.log(`${pluralize(errorResults.length, 'file')} failed to convert:`);
     for (let result of errorResults) {
