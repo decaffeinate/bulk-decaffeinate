@@ -124,6 +124,9 @@ The `filesToProcess` setting has highest precedence, then `pathFile`, then
   [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
   decaffeinate. This is useful to automate any cleanups to convert the output of
   decaffeinate to code matching your JS style.
+* `mochaEnvFilePattern`: an optional regular expression string. If specified,
+  all generated JavaScript files with a path matching this pattern have the text
+  `/* eslint-env mocha */` added to the start. For example, `"^.*-test.js$"`.
 
 ### Configuring paths to external tools
 

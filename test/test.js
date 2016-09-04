@@ -139,6 +139,27 @@ let notChanged = 4;
     });
   });
 
+  it('prepends "eslint-env mocha" when specified', async function() {
+    await runWithTemplateDir('mocha-env-test', async function () {
+      await initGitRepo();
+      let decaffeinateStdout = await runCli('convert');
+      assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
+
+      await assertFileContents('./A.js', `\
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+console.log('This is production code');
+`);
+
+      await assertFileContents('./A-test.js', `\
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+/* eslint-env mocha */
+console.log('This is test code');
+`);
+    });
+  });
+
   it('runs eslint, applying fixes and disabling existing issues', async function() {
     await runWithTemplateDir('eslint-fix-test', async function() {
       await initGitRepo();

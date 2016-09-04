@@ -64,12 +64,23 @@ Re-run with the "check" command for more details.`);
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
   await exec(`git commit -m "${decaffeinateCommitMsg}" --author "${gitAuthor}"`);
 
+  let jsFiles = baseFiles.map(f => `${f}.js`);
+
   if (config.jscodeshiftScripts) {
-    let jsFilenames = baseFiles.map(f => `${f}.js`).join(' ');
     for (let scriptPath of config.jscodeshiftScripts) {
       console.log(`Running jscodeshift script ${scriptPath}...`);
-      await execLive(`${config.jscodeshiftPath} -t ${scriptPath} ${jsFilenames}`);
+      await execLive(`${config.jscodeshiftPath} -t ${scriptPath} ${jsFiles.join(' ')}`);
     }
+  }
+
+  if (config.mochaEnvFilePattern) {
+    let regex = new RegExp(config.mochaEnvFilePattern);
+    let testFiles = jsFiles.filter(f => regex.test(f));
+    await runWithProgressBar(
+      'Adding /* eslint-env mocha */ to test files...', testFiles, async function(path) {
+        await prependToFile(path, '/* eslint-env mocha */\n');
+        return {error: null};
+      });
   }
 
   await runWithProgressBar(
@@ -122,7 +133,7 @@ ${ruleIds.map(ruleId => `    ${ruleId},`).join('\n')}
 */
 `);
     }
-    return {path, error: null};
+    return {error: null};
   };
 }
 
