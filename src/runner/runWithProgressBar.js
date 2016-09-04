@@ -5,6 +5,10 @@ const NUM_CONCURRENT_PROCESSES = 4;
 
 /**
  * Run the given command in parallel, showing a progress bar of results.
+ *
+ * The provided async function should return an object that at least contains
+ * a field called "error" that is truthy if there was a problem, but may contain
+ * any other fields.
  */
 export default async function runWithProgressBar(
     description, files, asyncFn, {runInSeries}={}) {

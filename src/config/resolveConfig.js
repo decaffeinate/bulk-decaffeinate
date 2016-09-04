@@ -34,6 +34,7 @@ export default async function resolveConfig(commander) {
   return {
     filesToProcess: await resolveFilesToProcess(config),
     jscodeshiftScripts: config.jscodeshiftScripts,
+    mochaEnvFilePattern: config.mochaEnvFilePattern,
     decaffeinatePath: await resolveDecaffeinatePath(config),
     jscodeshiftPath: await resolveJscodeshiftPath(config),
     eslintPath: await resolveEslintPath(config),
