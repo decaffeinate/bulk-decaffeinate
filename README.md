@@ -79,11 +79,13 @@ Here's what `convert` does in more detail:
   5. If the `jscodeshiftScripts` config value is specified, it runs
      [jscodeshift](https://github.com/facebook/jscodeshift) with those scripts
      in the order specified.
-  6. It runs `eslint --fix` on all files, which applies some style fixes
+  6. If the `mochaEnvFilePattern` config value is specified, it prepends
+     `/* eslint-env mocha */` to the top of every test file.
+  7. It runs `eslint --fix` on all files, which applies some style fixes
      according to your lint rules. For any remaining lint failures, it puts a
      comment at the top of the file disabling those specific lint rules and
      leaves a TODO comment to fix any remaining style issues.
-  7. All post-decaffeinate changes are committed as a third commit.
+  8. All post-decaffeinate changes are committed as a third commit.
 
 In all generated commits, "decaffeinate" is used as the author name (but not the
 email address). This makes it clear to people using `git blame` that the file
