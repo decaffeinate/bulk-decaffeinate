@@ -68,6 +68,8 @@ There are currently three commands you can run:
   failed files in the [online decaffeinate repl](http://decaffeinate-project.org/repl/),
   with one browser tab per failed file.
 * `convert` actually converts the files from CofeeScript to JavaScript.
+* `clean` deletes all .original.coffee files in the current directory or any of
+  its subdirectories.
 
 Here's what `convert` does in more detail:
   1. It does a dry run of decaffeinate on all files to make sure there won't be

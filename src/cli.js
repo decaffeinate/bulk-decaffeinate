@@ -2,6 +2,7 @@ import 'babel-polyfill';
 import commander from 'commander';
 
 import check from './check';
+import clean from './clean';
 import resolveConfig from './config/resolveConfig';
 import convert from './convert';
 import CLIError from './util/CLIError';
@@ -19,7 +20,9 @@ export default function () {
       directory are used.
     convert: Run decaffeinate on the specified files and generate git commits
       for the transition.
-    view-errors: Open failures from the most recent run in an online repl.`)
+    view-errors: Open failures from the most recent run in an online repl.
+    clean: Delete all files ending with .original.coffee in the current
+      working directory or any of its subdirectories.`)
     .action(commandArg => command = commandArg)
     .option('-p, --path-file [path]',
       `A file containing the paths of .coffee files to decaffeinate, one
@@ -52,6 +55,8 @@ async function runCommand(command) {
       await convert(config);
     } else if (command === 'view-errors') {
       await viewErrors();
+    } else if (command === 'clean') {
+      await clean();
     } else {
       commander.outputHelp();
     }
