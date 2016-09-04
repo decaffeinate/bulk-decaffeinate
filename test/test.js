@@ -8,17 +8,18 @@ import { readFile } from 'mz/fs';
 let originalCwd = process.cwd();
 
 async function runCli(args) {
-  return (await exec(`"${originalCwd}/bin/bulk-decaffeinate" \
+  let [stdout, stderr] = (await exec(`"${originalCwd}/bin/bulk-decaffeinate" \
     --decaffeinate-path "${originalCwd}/node_modules/.bin/decaffeinate" \
     --jscodeshift-path "${originalCwd}/node_modules/.bin/jscodeshift" \
     --eslint-path "${originalCwd}/node_modules/.bin/eslint" \
-    ${args}`))[0];
+    ${args}`));
+  return {stdout, stderr};
 }
 
-function assertIncludes(stdout, substr) {
+function assertIncludes(output, substr) {
   assert(
-    stdout.includes(substr),
-    `Expected stdout to include "${substr}".\n\nFull stdout:\n${stdout}`
+    output.includes(substr),
+    `Expected the output to include "${substr}".\n\nFull output:\n${output}`
   );
 }
 
@@ -46,7 +47,7 @@ async function runWithTemplateDir(exampleName, fn) {
 
 describe('basic CLI', () => {
   it('shows a help message when invoked with no arguments', async function() {
-    let stdout = await runCli('');
+    let {stdout} = await runCli('');
     assertIncludes(stdout, 'Usage:');
     assertIncludes(stdout, 'Commands:');
     assertIncludes(stdout, 'Options:');
@@ -55,14 +56,14 @@ describe('basic CLI', () => {
 
 describe('simple-success', () => {
   it('discovers and runs files', async function() {
-    let stdout = await runCli('check -d test/examples/simple-success');
+    let {stdout} = await runCli('check -d test/examples/simple-success');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
     assertIncludes(stdout, 'All checks succeeded');
   });
 
   it('runs files from the current directory', async function() {
     await runWithTemplateDir('simple-success', async function() {
-      let stdout = await runCli('check');
+      let {stdout} = await runCli('check');
       assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
       assertIncludes(stdout, 'All checks succeeded');
     });
@@ -71,7 +72,7 @@ describe('simple-success', () => {
 
 describe('simple-error', () => {
   it('discovers two files and fails on one', async function() {
-    let stdout = await runCli('check -d test/examples/simple-error');
+    let {stdout} = await runCli('check -d test/examples/simple-error');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
     assertIncludes(stdout, '1 file failed to convert');
   });
@@ -79,7 +80,7 @@ describe('simple-error', () => {
 
 describe('file-list', () => {
   it('reads a path file containing two lines, and ignores the other file', async function() {
-    let stdout = await runCli('check --path-file test/examples/file-list/files-to-decaffeinate.txt');
+    let {stdout} = await runCli('check --path-file test/examples/file-list/files-to-decaffeinate.txt');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 3 files...');
     assertIncludes(stdout, 'All checks succeeded');
   });
@@ -88,7 +89,7 @@ describe('file-list', () => {
 describe('config files', () => {
   it('reads the list of files from a config file', async function() {
     await runWithTemplateDir('simple-config-file', async function() {
-      let stdout = await runCli('check');
+      let {stdout} = await runCli('check');
       assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
       assertIncludes(stdout, 'All checks succeeded');
     });
@@ -107,8 +108,8 @@ describe('convert', () => {
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
-      let decaffeinateStdout = await runCli('convert');
-      assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
+      let {stdout} = await runCli('convert');
+      assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
       assert.equal(logStdout, `\
@@ -124,8 +125,8 @@ Sample User <sample@example.com> Initial commit
   it('runs jscodeshift', async function() {
     await runWithTemplateDir('jscodeshift-test', async function() {
       await initGitRepo();
-      let decaffeinateStdout = await runCli('convert');
-      assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
+      let {stdout} = await runCli('convert');
+      assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       await assertFileContents('./A.js', `\
 /* eslint-disable
@@ -142,8 +143,8 @@ let notChanged = 4;
   it('prepends "eslint-env mocha" when specified', async function() {
     await runWithTemplateDir('mocha-env-test', async function () {
       await initGitRepo();
-      let decaffeinateStdout = await runCli('convert');
-      assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
+      let {stdout} = await runCli('convert');
+      assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       await assertFileContents('./A.js', `\
 // TODO: This file was created by bulk-decaffeinate.
@@ -163,8 +164,8 @@ console.log('This is test code');
   it('runs eslint, applying fixes and disabling existing issues', async function() {
     await runWithTemplateDir('eslint-fix-test', async function() {
       await initGitRepo();
-      let decaffeinateStdout = await runCli('convert');
-      assertIncludes(decaffeinateStdout, 'Successfully ran decaffeinate');
+      let {stdout} = await runCli('convert');
+      assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       await assertFileContents('./A.js', `\
 /* eslint-disable
@@ -177,6 +178,14 @@ const x = 2;
 const y = 3;
 console.log(x);
 `);
+    });
+  });
+
+  it('fails when .coffee and .js files both exist', async function() {
+    await runWithTemplateDir('existing-js-file', async function() {
+      await initGitRepo();
+      let {stderr} = await runCli('convert');
+      assertIncludes(stderr, 'The file A.js already exists.');
     });
   });
 });
