@@ -16,7 +16,7 @@ export default async function getCoffeeFilesUnderPath(dirPath) {
     if ((await stat(childPath)).isDirectory()) {
       let subdirCoffeeFiles = await getCoffeeFilesUnderPath(childPath);
       resultFiles.push(...subdirCoffeeFiles);
-    } else if (child.endsWith('.coffee')) {
+    } else if (child.endsWith('.coffee') && !child.endsWith('.original.coffee')) {
       resultFiles.push(childPath);
     }
   }

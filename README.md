@@ -37,6 +37,10 @@ To open failures in the online repl, run "bulk-decaffeinate view-errors"
 (7 browser tabs are opened, showing all failures.)
 ```
 
+Once any failures are resolved (generally by tweaking the CoffeeScript to work
+with decaffeinate), the command `bulk-decaffeinate convert` generates three git
+commits to convert the files to JS.
+
 ## Assumptions
 
 While the underlying [decaffeinate](https://github.com/decaffeinate/decaffeinate)
