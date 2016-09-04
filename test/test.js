@@ -3,7 +3,7 @@ import 'babel-polyfill';
 
 import assert from 'assert';
 import { exec } from 'mz/child_process';
-import { readFile } from 'mz/fs';
+import { exists, readFile } from 'mz/fs';
 
 let originalCwd = process.cwd();
 
@@ -198,6 +198,22 @@ console.log(x);
       await exec('git add A.coffee');
       ({stderr} = await runCli('convert'));
       assertIncludes(stderr, 'You have modifications to your git worktree.');
+    });
+  });
+
+  it('generates backup files that are removed by clean', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      await initGitRepo();
+      await runCli('convert');
+      assert(
+        await exists('./A.original.coffee'),
+        'Expected a backup file to be created.'
+      );
+      await runCli('clean');
+      assert(
+        !await exists('./A.original.coffee'),
+        'Expected the "clean" command to get rid of the backup file.'
+      );
     });
   });
 });
