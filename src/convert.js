@@ -8,6 +8,8 @@ import execLive from './util/execLive';
 import pluralize from './util/pluralize';
 
 export default async function convert(config) {
+  await assertGitWorktreeClean();
+
   let coffeeFiles = config.filesToProcess;
   let baseFiles = getBaseFiles(coffeeFiles);
 
@@ -97,6 +99,15 @@ Re-run with the "check" command for more details.`);
   await exec(`git commit -m "${postProcessCommitMsg}" --author "${gitAuthor}"`);
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
+}
+
+async function assertGitWorktreeClean() {
+  let stdout = (await exec('git status --short --untracked-files=no'))[0];
+  if (stdout.length) {
+    throw new CLIError(`\
+You have modifications to your git worktree.
+Please revert or commit them before running convert.`);
+  }
 }
 
 function getBaseFiles(coffeeFiles) {

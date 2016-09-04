@@ -188,4 +188,16 @@ console.log(x);
       assertIncludes(stderr, 'The file A.js already exists.');
     });
   });
+
+  it('fails when the git worktree has changes', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      await initGitRepo();
+      await exec('echo "x = 2" >> A.coffee');
+      let {stderr} = await runCli('convert');
+      assertIncludes(stderr, 'You have modifications to your git worktree.');
+      await exec('git add A.coffee');
+      ({stderr} = await runCli('convert'));
+      assertIncludes(stderr, 'You have modifications to your git worktree.');
+    });
+  });
 });
