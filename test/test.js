@@ -5,6 +5,8 @@ import assert from 'assert';
 import { exec } from 'mz/child_process';
 import { exists, readFile } from 'mz/fs';
 
+import getFilesUnderPath from '../src/util/getFilesUnderPath';
+
 let originalCwd = process.cwd();
 
 async function runCli(args) {
@@ -28,21 +30,42 @@ async function assertFileContents(path, expectedContents) {
   assert.equal(contents, expectedContents);
 }
 
+async function assertFilesEqual(actualFile, expectedFile) {
+  let actualContents = (await readFile(actualFile)).toString();
+  let expectedContents = (await readFile(expectedFile)).toString();
+  assert.equal(
+    actualContents, expectedContents,
+    `The file ${actualFile} did not match the expected file.`
+  );
+}
+
 /**
  * Run the given async function inside a temporary directory starting from the
  * given example.
  */
 async function runWithTemplateDir(exampleName, fn) {
+  let suffix = Math.floor(Math.random() * 1000000000000);
+  let newDir = `./test/tmp-projects/${exampleName}-${suffix}`;
   try {
-    let suffix = Math.floor(Math.random() * 1000000000000);
-    let newDir = `./test/tmp-projects/${exampleName}-${suffix}`;
     await exec(`mkdir -p "${newDir}"`);
     await exec(`cp -r "./test/examples/${exampleName}/." "${newDir}"`);
     process.chdir(newDir);
     await fn();
+  } catch (e) {
+    console.log('Assertion failure. Test data saved here:');
+    console.log(`${originalCwd}${newDir.substr(1)}`);
+    throw e;
   } finally {
     process.chdir(originalCwd);
   }
+}
+
+async function initGitRepo() {
+  await exec('git init');
+  await exec('git config user.name "Sample User"');
+  await exec('git config user.email "sample@example.com"');
+  await exec('git add -A');
+  await exec('git commit -m "Initial commit"');
 }
 
 describe('basic CLI', () => {
@@ -97,14 +120,6 @@ describe('config files', () => {
 });
 
 describe('convert', () => {
-  async function initGitRepo() {
-    await exec('git init');
-    await exec('git config user.name "Sample User"');
-    await exec('git config user.email "sample@example.com"');
-    await exec('git add -A');
-    await exec('git commit -m "Initial commit"');
-  }
-
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
@@ -215,5 +230,49 @@ console.log(x);
         'Expected the "clean" command to get rid of the backup file.'
       );
     });
+  });
+});
+
+describe('fix-imports', () => {
+  async function runFixImportsTest(dirName) {
+    await runWithTemplateDir(dirName, async function () {
+      // We intentionally call the files ".js.expected" so that jscodeshift
+      // doesn't discover and try to convert them.
+      await initGitRepo();
+      let {stdout, stderr} = await runCli('convert');
+      assertIncludes(stdout, 'Fixing any imports across the whole codebase');
+      assert.equal(stderr, '');
+
+      let expectedFiles = await getFilesUnderPath('.', path => path.endsWith('.expected'));
+      assert(expectedFiles.length > 0);
+      for (let expectedFile of expectedFiles) {
+        let actualFile = expectedFile.substr(0, expectedFile.length - '.expected'.length);
+        await assertFilesEqual(actualFile, expectedFile);
+      }
+    });
+  }
+
+  it('handles absolute imports', async function() {
+    await runFixImportsTest('fix-imports-absolute-imports');
+  });
+
+  it('converts a default import to import * when necessary', async function() {
+    await runFixImportsTest('fix-imports-default-import-to-import-star');
+  });
+
+  it('properly fixes import statements in pre-existing JS files', async function() {
+    await runFixImportsTest('fix-imports-import-from-existing-js');
+  });
+
+  it('converts named imports to destructure statements when necessary', async function() {
+    await runFixImportsTest('fix-imports-named-import-to-destructure');
+  });
+
+  it('properly handles existing JS code using import *', async function() {
+    await runFixImportsTest('fix-imports-star-import-from-existing-js');
+  });
+
+  it('properly destructures from import * if necessary', async function() {
+    await runFixImportsTest('fix-imports-destructure-from-import-star');
   });
 });

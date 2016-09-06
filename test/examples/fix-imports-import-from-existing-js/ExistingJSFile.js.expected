@@ -1,0 +1,4 @@
+import ConvertedCoffeeFile, * as ConvertedCoffeeFileExports from './ConvertedCoffeeFile';
+
+console.log(ConvertedCoffeeFile.firstValue);
+console.log(ConvertedCoffeeFileExports.secondValue);

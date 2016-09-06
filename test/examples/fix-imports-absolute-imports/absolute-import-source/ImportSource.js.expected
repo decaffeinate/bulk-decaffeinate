@@ -1,0 +1,4 @@
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+import * as ImportTarget from 'absolute-import-target/ImportTarget';
+console.log(ImportTarget.num);

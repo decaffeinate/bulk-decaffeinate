@@ -90,11 +90,14 @@ Here's what `convert` does in more detail:
      in the order specified.
   6. If the `mochaEnvFilePattern` config value is specified, it prepends
      `/* eslint-env mocha */` to the top of every test file.
-  7. It runs `eslint --fix` on all files, which applies some style fixes
+  7. If the `fixImportsConfig` config value is specified, it runs a transform
+     that does whole-codebase analysis to fix any import problems that might
+     have been introduced by decaffeinate.
+  8. It runs `eslint --fix` on all files, which applies some style fixes
      according to your lint rules. For any remaining lint failures, it puts a
      comment at the top of the file disabling those specific lint rules and
      leaves a TODO comment to fix any remaining style issues.
-  8. All post-decaffeinate changes are committed as a third commit.
+  9. All post-decaffeinate changes are committed as a third commit.
 
 In all generated commits, "decaffeinate" is used as the author name (but not the
 email address). This makes it clear to people using `git blame` that the file
@@ -135,6 +138,15 @@ The `filesToProcess` setting has highest precedence, then `pathFile`, then
   [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
   decaffeinate. This is useful to automate any cleanups to convert the output of
   decaffeinate to code matching your JS style.
+* `fixImportsConfig`: an optional object. If present, a whole-codebase pass will
+  be done to fix any incorrect imports involving the converted files. It should
+  be an object with up to two fields:
+  * `searchPath`: a required field specifying a path to a directory containing
+    all JS files in the project.
+  * `absoluteImportPaths`: an optional array of strings, each of which is used
+    as an absolute path starting point when resolving imports. This is necessary
+    if you do any tricks to get absolute-style imports in your project, since
+    the fix-imports script needs to be able to resolve import names to files.
 * `mochaEnvFilePattern`: an optional regular expression string. If specified,
   all generated JavaScript files with a path matching this pattern have the text
   `/* eslint-env mocha */` added to the start. For example, `"^.*-test.js$"`.

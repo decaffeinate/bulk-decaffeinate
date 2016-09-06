@@ -10,7 +10,7 @@
   "scripts": {
     "prebuild": "npm run lint",
     "build": "rollup -c",
-    "lint": "eslint src test",
+    "lint": "eslint src test jscodeshift-scripts",
     "pretest": "npm run build",
     "test": "mocha",
     "semantic-release": "semantic-release pre && npm publish && semantic-release post"
@@ -28,7 +28,8 @@
   "license": "MIT",
   "files": [
     "bin",
-    "dist"
+    "dist",
+    "jscodeshift-scripts"
   ],
   "bugs": {
     "url": "https://github.com/alangpierce/bulk-decaffeinate/issues"

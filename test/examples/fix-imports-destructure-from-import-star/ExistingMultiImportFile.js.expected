@@ -1,0 +1,8 @@
+import * as ConvertedCoffeeFile from './ConvertedCoffeeFile';
+
+const {
+  secondExport: s
+} = ConvertedCoffeeFile;
+
+console.log(ConvertedCoffeeFile.firstExport);
+console.log(s);
