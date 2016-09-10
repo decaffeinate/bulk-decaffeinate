@@ -61,12 +61,15 @@ current project. Most steps shouldn't be hard to disable using a config setting.
 
 ## What it does
 
-There are currently three commands you can run:
+bulk-decaffeinate supports a number of commands:
 * `check` does a dry run of decaffeinate on the specified files and reports how
   decaffeinate-ready the set of files is.
 * `view-errors` should be run after `check` reports failures. It opens the
   failed files in the [online decaffeinate repl](http://decaffeinate-project.org/repl/),
-  with one browser tab per failed file.
+  with one browser tab per failed file. Each browser tab loads the online repl
+  page with your source code encoded in the hash fragment of the URL. Because it
+  is in the hash fragment and not a regular query param, your code is never sent
+  to the server.
 * `convert` actually converts the files from CofeeScript to JavaScript.
 * `clean` deletes all .original.coffee files in the current directory or any of
   its subdirectories.
