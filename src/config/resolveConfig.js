@@ -34,6 +34,7 @@ export default async function resolveConfig(commander) {
   await validateFilesToProcess(filesToProcess);
   return {
     filesToProcess,
+    fixImportsConfig: config.fixImportsConfig,
     jscodeshiftScripts: config.jscodeshiftScripts,
     mochaEnvFilePattern: config.mochaEnvFilePattern,
     decaffeinatePath: await resolveDecaffeinatePath(config),
@@ -90,7 +91,7 @@ async function resolveDecaffeinatePath(config) {
 async function resolveJscodeshiftPath(config) {
   // jscodeshift is an optional step, so don't prompt to install it if we won't
   // be using it.
-  if (!config.jscodeshiftScripts) {
+  if (!config.jscodeshiftScripts && !config.fixImportsConfig) {
     return null;
   }
   if (config.jscodeshiftPath) {

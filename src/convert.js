@@ -1,5 +1,6 @@
 import { exec } from 'mz/child_process';
 import { readFile, writeFile } from 'mz/fs';
+import path from 'path';
 
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
@@ -85,6 +86,23 @@ Re-run with the "check" command for more details.`);
       });
   }
 
+  if (config.fixImportsConfig) {
+    let {searchPath, absoluteImportPaths} = config.fixImportsConfig;
+    if (!absoluteImportPaths) {
+      absoluteImportPaths = [];
+    }
+    let scriptPath = path.join(__dirname, '../jscodeshift-scripts/fix-imports.js');
+    console.log('Fixing any imports across the whole codebase...');
+    let options = {
+      convertedFiles: jsFiles.map(p => path.resolve(p)),
+      absoluteImportPaths: absoluteImportPaths.map(p => path.resolve(p)),
+    };
+    let encodedOptions = new Buffer(JSON.stringify(options)).toString('base64');
+    await execLive(`\
+      ${config.jscodeshiftPath} -t ${scriptPath} ${searchPath}\
+        --encoded-options=${encodedOptions}`);
+  }
+
   await runWithProgressBar(
     'Running eslint --fix on all files...', baseFiles, makeEslintFixFn(config));
 
@@ -127,11 +145,14 @@ async function getGitAuthor() {
 function makeEslintFixFn(config) {
   return async function runEslint(path) {
     // Ignore the eslint exit code; it gives useful stdout in the same format
-    // regardless of the exit code.
+    // regardless of the exit code. Also keep a 10MB buffer since sometimes
+    // there can be a LOT of lint failures.
     let eslintOutputStr = (await exec(
-      `${config.eslintPath} --fix --format json ${path}.js; :`))[0];
+      `${config.eslintPath} --fix --format json ${path}.js; :`,
+      {maxBuffer: 10000*1024}))[0];
     let eslintOutput = JSON.parse(eslintOutputStr);
-    let ruleIds = eslintOutput[0].messages.map(message => message.ruleId);
+    let ruleIds = eslintOutput[0].messages
+      .map(message => message.ruleId).filter(ruleId => ruleId);
     ruleIds = Array.from(new Set(ruleIds)).sort();
     await prependToFile(`${path}.js`, `\
 // TODO: This file was created by bulk-decaffeinate.
