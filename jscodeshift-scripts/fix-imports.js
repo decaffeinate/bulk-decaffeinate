@@ -158,7 +158,7 @@ export default function (fileInfo, api, options) {
             }
           }
           if (p.node.declaration.id) {
-            namedExports.push(p.node.declaration.id);
+            namedExports.push(p.node.declaration.id.name);
           }
         }
       });

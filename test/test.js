@@ -275,4 +275,8 @@ describe('fix-imports', () => {
   it('properly destructures from import * if necessary', async function() {
     await runFixImportsTest('fix-imports-destructure-from-import-star');
   });
+
+  it('properly reads exports when "export function" is used', async function() {
+    await runFixImportsTest('fix-imports-export-function');
+  });
 });
