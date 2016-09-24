@@ -30,6 +30,14 @@ async function assertFileContents(path, expectedContents) {
   assert.equal(contents, expectedContents);
 }
 
+async function assertFileIncludes(path, expectedSubstr) {
+  let contents = (await readFile(path)).toString();
+  assert(
+    contents.includes(expectedSubstr),
+    `Expected file to include "${expectedSubstr}".\n\nFull file contents:\n${contents}`
+  );
+}
+
 async function assertFilesEqual(actualFile, expectedFile) {
   let actualContents = (await readFile(actualFile)).toString();
   let expectedContents = (await readFile(expectedFile)).toString();
@@ -98,6 +106,23 @@ describe('simple-error', () => {
     let {stdout} = await runCli('check -d test/examples/simple-error');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
     assertIncludes(stdout, '1 file failed to convert');
+
+    await assertFileIncludes(
+      'decaffeinate-errors.log',
+      '===== test/examples/simple-error/error.coffee'
+    );
+
+    let results = JSON.parse((await readFile('decaffeinate-results.json')).toString());
+    assert.equal(results.length, 2);
+    assert.equal(results[0].path, 'test/examples/simple-error/error.coffee');
+    assert.notEqual(results[0].error, null);
+    assert.equal(results[1].path, 'test/examples/simple-error/success.coffee');
+    assert.equal(results[1].error, null);
+
+    await assertFileContents(
+      'decaffeinate-successful-files.txt',
+      'test/examples/simple-error/success.coffee'
+    );
   });
 });
 

@@ -117,6 +117,10 @@ Re-run with the "check" command for more details.`);
   await exec(`git commit -m "${postProcessCommitMsg}" --author "${gitAuthor}"`);
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
+  console.log('You should now fix lint issues in any affected files.');
+  console.log('All CoffeeScript files were backed up as .original.coffee files that you can use for comparison.');
+  console.log('You can run "bulk-decaffeinate clean" to remove those files.');
+  console.log('To allow git to properly track file history, you should NOT squash the generated commits together.');
 }
 
 async function assertGitWorktreeClean() {
