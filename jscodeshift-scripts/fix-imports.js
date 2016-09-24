@@ -91,8 +91,15 @@ export default function (fileInfo, api, options) {
     // (e.g. MyModule.myExport), then handle those with a star import. If we
     // also have direct usages of named exports (e.g. myOtherExport), we'll need
     // to destructure them from the * import later, but we try to avoid that
-    // when possible.
-    let needsStarImport = importManifest.namedImportObjectAccesses.length > 0;
+    // when possible. Also, if a default or star import originally existed, that
+    // name needs to stay bound somehow, so we make sure to include it as a star
+    // import if the other module didn't have a default export.
+    let needsStarImport =
+      importManifest.namedImportObjectAccesses.length > 0 ||
+      (!needsDefaultImport &&
+        (specifierIndex.defaultImport !== null ||
+        specifierIndex.starImport !== null)
+      );
 
     let {defaultImportName, starImportName} = resolveImportObjectNames(
       specifierIndex, needsDefaultImport, needsStarImport,

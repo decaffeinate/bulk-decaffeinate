@@ -279,4 +279,8 @@ describe('fix-imports', () => {
   it('properly reads exports when "export function" is used', async function() {
     await runFixImportsTest('fix-imports-export-function');
   });
+
+  it('uses an import * import when necessary even when there are no name usages', async function() {
+    await runFixImportsTest('fix-imports-no-name-usages');
+  });
 });
