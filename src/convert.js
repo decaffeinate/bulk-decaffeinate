@@ -103,8 +103,13 @@ Re-run with the "check" command for more details.`);
         --encoded-options=${encodedOptions}`);
   }
 
-  await runWithProgressBar(
+  let eslintResults = await runWithProgressBar(
     'Running eslint --fix on all files...', baseFiles, makeEslintFixFn(config));
+  for (let result of eslintResults) {
+    for (let message of result.messages) {
+      console.log(message);
+    }
+  }
 
   await runCommand(
     'Running git add on all files again...',
@@ -148,19 +153,36 @@ async function getGitAuthor() {
 
 function makeEslintFixFn(config) {
   return async function runEslint(path) {
+    let messages = [];
+
     // Ignore the eslint exit code; it gives useful stdout in the same format
     // regardless of the exit code. Also keep a 10MB buffer since sometimes
     // there can be a LOT of lint failures.
     let eslintOutputStr = (await exec(
       `${config.eslintPath} --fix --format json ${path}.js; :`,
       {maxBuffer: 10000*1024}))[0];
-    let eslintOutput = JSON.parse(eslintOutputStr);
-    let ruleIds = eslintOutput[0].messages
-      .map(message => message.ruleId).filter(ruleId => ruleId);
-    ruleIds = Array.from(new Set(ruleIds)).sort();
+
+    let ruleIds;
+    if (eslintOutputStr.includes("ESLint couldn't find a configuration file")) {
+      messages.push(`Skipping "eslint --fix" on ${path}.js because there was no eslint config file.`);
+      ruleIds = [];
+    } else {
+      let eslintOutput = JSON.parse(eslintOutputStr);
+      ruleIds = eslintOutput[0].messages
+        .map(message => message.ruleId).filter(ruleId => ruleId);
+      ruleIds = Array.from(new Set(ruleIds)).sort();
+    }
+
+    let suggestionLine;
+    if (ruleIds.length > 0) {
+      suggestionLine = 'Fix any style issues and re-enable lint.';
+    } else {
+      suggestionLine = 'Sanity-check the conversion and remove this comment.';
+    }
+
     await prependToFile(`${path}.js`, `\
 // TODO: This file was created by bulk-decaffeinate.
-// Fix any style issues and re-enable lint.
+// ${suggestionLine}
 `);
     if (ruleIds.length > 0) {
       await prependToFile(`${path}.js`, `\
@@ -169,7 +191,7 @@ ${ruleIds.map(ruleId => `    ${ruleId},`).join('\n')}
 */
 `);
     }
-    return {error: null};
+    return {error: null, messages};
   };
 }
 
