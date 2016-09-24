@@ -188,13 +188,13 @@ let notChanged = 4;
 
       await assertFileContents('./A.js', `\
 // TODO: This file was created by bulk-decaffeinate.
-// Fix any style issues and re-enable lint.
+// Sanity-check the conversion and remove this comment.
 console.log('This is production code');
 `);
 
       await assertFileContents('./A-test.js', `\
 // TODO: This file was created by bulk-decaffeinate.
-// Fix any style issues and re-enable lint.
+// Sanity-check the conversion and remove this comment.
 /* eslint-env mocha */
 console.log('This is test code');
 `);
@@ -254,6 +254,21 @@ console.log(x);
         !await exists('./A.original.coffee'),
         'Expected the "clean" command to get rid of the backup file.'
       );
+    });
+  });
+
+  it('handles a missing eslint config', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      await initGitRepo();
+      let cliResult;
+      try {
+        await exec('mv ../../../.eslintrc ../../../.eslintrc.backup');
+        cliResult = await runCli('convert');
+      } finally {
+        await exec('mv ../../../.eslintrc.backup ../../../.eslintrc');
+      }
+      assert.equal(cliResult.stderr, '');
+      assertIncludes(cliResult.stdout, 'because there was no eslint config file');
     });
   });
 });

@@ -1,5 +1,5 @@
 // TODO: This file was created by bulk-decaffeinate.
-// Fix any style issues and re-enable lint.
+// Sanity-check the conversion and remove this comment.
 export default {
   twenty: 20
 };
