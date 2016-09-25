@@ -289,6 +289,8 @@ describe('fix-imports', () => {
         let actualFile = expectedFile.substr(0, expectedFile.length - '.expected'.length);
         await assertFilesEqual(actualFile, expectedFile);
       }
+      let changedFiles = (await exec('git status --short --untracked-files=no'))[0];
+      assert.equal(changedFiles, '', 'Expected all file changes to be committed.');
     });
   }
 

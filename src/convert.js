@@ -111,10 +111,8 @@ Re-run with the "check" command for more details.`);
     }
   }
 
-  await runCommand(
-    'Running git add on all files again...',
-    p => `git add ${p}.js`,
-    {runInSeries: true});
+  console.log(`Running git add for all files with changes...`);
+  await exec(`git add -u`);
 
   let postProcessCommitMsg =
     `decaffeinate: Run post-processing cleanups on ${pluralize(baseFiles.length, 'file')}`;
