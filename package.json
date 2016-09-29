@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/alangpierce/bulk-decaffeinate#readme",
   "devDependencies": {
-    "babel-eslint": "^6.1.2",
+    "babel-eslint": "^7.0.0",
     "babel-plugin-external-helpers": "^6.8.0",
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "babel-plugin-transform-regenerator": "^6.11.4",
