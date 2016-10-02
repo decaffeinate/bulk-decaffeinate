@@ -110,14 +110,31 @@ hopefully be fairly readable.
 ## Configuration
 
 You can specify custom configuration in a config file, usually called
-`bulk-decaffeinate.json`, in the current working directory. Any file starting
-with `bulk-decaffeinate` and ending with `.json` will be counted, and multiple
-config files may exist at once. If there are multiple config files, they are
-merged, with alphabetically-later config file names taking precedence over
-alphabetically-earlier files. Many config options can also be specified directly
-as CLI arguments, with CLI arguments taking precedence over any config file
-setting.
+`bulk-decaffeinate.config.js`, in the current working directory. It should
+export a JS object with your config. Any file starting with `bulk-decaffeinate`
+and ending with `.config.js` will be counted, and multiple config files may
+exist at once. If there are multiple config files, they are merged, with
+alphabetically-later config file names taking precedence over
+alphabetically-earlier files. Many config options can also be specified
+directly as CLI arguments, with CLI arguments taking precedence over any config
+file setting.
 
+Here's an example config file:
+
+```js
+module.exports = {
+  jscodeshiftScripts: [
+    './scripts/dev/codemods/arrow-function.js',
+    './scripts/dev/codemods/rd-to-create-element.js',
+    './scripts/dev/codemods/create-element-to-jsx.js',
+  ],
+  mochaEnvFilePattern: '^.*-test.js$',
+  fixImportsConfig: {
+    searchPath: './coffee',
+    absoluteImportPaths: ['./coffee'],
+  },
+};
+```
 
 ### Specifying files to process
 

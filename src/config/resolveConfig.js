@@ -1,11 +1,14 @@
 import { exec } from 'mz/child_process';
 import { exists, readdir, readFile, stat } from 'mz/fs';
 import readline from 'mz/readline';
+import { resolve } from 'path';
+import requireUncached from 'require-uncached';
 
 import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
 import getCoffeeFilesUnderPath from './getCoffeeFilesUnderPath';
 import CLIError from '../util/CLIError';
 import execLive from '../util/execLive';
+
 /**
  * Resolve the configuration from a number of sources: any number of config
  * files and CLI options. Then "canonicalize" the config, e.g. by resolving the
@@ -17,17 +20,7 @@ export default async function resolveConfig(commander) {
   let currentDirFiles = await readdir('.');
   currentDirFiles.sort();
   for (let filename of currentDirFiles) {
-    if (filename.startsWith('bulk-decaffeinate')
-        && filename.endsWith('.json')
-        && !(await stat(filename)).isDirectory()) {
-      try {
-        let newConfig = JSON.parse(await readFile(filename));
-        config = Object.assign(config, newConfig);
-      } catch (e) {
-        throw new CLIError(
-          `Error reading file ${filename}. Make sure it is a valid JSON file.`);
-      }
-    }
+    config = await applyPossibleConfig(filename, config);
   }
   config = Object.assign(config, getCLIParamsConfig(commander));
   let filesToProcess = await resolveFilesToProcess(config);
@@ -41,6 +34,34 @@ export default async function resolveConfig(commander) {
     jscodeshiftPath: await resolveJscodeshiftPath(config),
     eslintPath: await resolveEslintPath(config),
   };
+}
+
+async function applyPossibleConfig(filename, config) {
+  if (!filename.startsWith('bulk-decaffeinate') ||
+      (await stat(filename)).isDirectory()) {
+    return config;
+  }
+
+  let filePath = resolve(filename);
+  if (filename.endsWith('.json')) {
+    try {
+      let newConfig = JSON.parse(await readFile(filePath));
+      return Object.assign(config, newConfig);
+    } catch (e) {
+      throw new CLIError(
+        `Error reading file ${filePath}. Make sure it is a valid JSON file.`);
+    }
+  } else if (filename.endsWith('.config.js')) {
+    try {
+      let newConfig = requireUncached(filePath);
+      return Object.assign(config, newConfig);
+    } catch (e) {
+      throw new CLIError(
+        `Error reading file ${filePath}. Make sure it is a valid JS file.`);
+    }
+  } else {
+    return config;
+  }
 }
 
 /**

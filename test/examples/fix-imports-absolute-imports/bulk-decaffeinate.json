@@ -1,6 +1,0 @@
-{
-  "fixImportsConfig": {
-    "searchPath": ".",
-    "absoluteImportPaths": ["."]
-  }
-}

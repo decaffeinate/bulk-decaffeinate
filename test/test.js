@@ -137,7 +137,8 @@ describe('file-list', () => {
 describe('config files', () => {
   it('reads the list of files from a config file', async function() {
     await runWithTemplateDir('simple-config-file', async function() {
-      let {stdout} = await runCli('check');
+      let {stdout, stderr} = await runCli('check');
+      assert.equal(stderr, '');
       assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
       assertIncludes(stdout, 'All checks succeeded');
     });
