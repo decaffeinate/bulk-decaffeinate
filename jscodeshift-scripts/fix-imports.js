@@ -233,7 +233,7 @@ module.exports = function (fileInfo, api, options) {
     return {
       defaultImportAccesses,
       starImportAccesses,
-      directAccesses
+      directAccesses,
     };
   }
 
@@ -247,8 +247,8 @@ module.exports = function (fileInfo, api, options) {
     root
       .find(j.MemberExpression, {
         object: {
-          name: objectName
-        }
+          name: objectName,
+        },
       })
       .forEach(path => {
         if (path.node.property.type === 'Identifier') {
@@ -514,7 +514,7 @@ module.exports = function (fileInfo, api, options) {
         j.variableDeclarator(
           j.objectPattern(properties),
           j.identifier(objName)
-        )
+        ),
       ]
     );
   }

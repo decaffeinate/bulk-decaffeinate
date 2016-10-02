@@ -2,5 +2,5 @@
 // Sanity-check the conversion and remove this comment.
 export default {
   twelve: 12,
-  seventeen: 17
+  seventeen: 17,
 };
