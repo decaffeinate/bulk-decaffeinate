@@ -129,15 +129,18 @@ module.exports = function (fileInfo, api, options) {
     if (!importPath.endsWith('.js')) {
       importPath += '.js';
     }
-    let currentDir = path.dirname(importingFilePath);
-    let relativePath = path.resolve(currentDir, importPath);
-    if (existsSync(relativePath)) {
-      return relativePath;
-    }
-    for (let absoluteImportPath of absoluteImportPaths) {
-      let absolutePath = path.resolve(absoluteImportPath, importPath);
-      if (existsSync(absolutePath)) {
-        return absolutePath;
+    if (importPath.startsWith('.')) {
+      let currentDir = path.dirname(importingFilePath);
+      let relativePath = path.resolve(currentDir, importPath);
+      if (existsSync(relativePath)) {
+        return relativePath;
+      }
+    } else {
+      for (let absoluteImportPath of absoluteImportPaths) {
+        let absolutePath = path.resolve(absoluteImportPath, importPath);
+        if (existsSync(absolutePath)) {
+          return absolutePath;
+        }
       }
     }
     return null;
