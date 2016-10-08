@@ -326,4 +326,8 @@ describe('fix-imports', () => {
   it('uses an import * import when necessary even when there are no name usages', async function() {
     await runFixImportsTest('fix-imports-no-name-usages');
   });
+
+  it('only does relative path resolution when an import is relative style', async function() {
+    await runFixImportsTest('fix-imports-non-relative-path');
+  });
 });
