@@ -4,4 +4,5 @@ dist
 decaffeinate-errors.log
 decaffeinate-results.json
 decaffeinate-successful-files.txt
+jscodeshift-scripts-dist
 test/tmp-projects

@@ -18,10 +18,10 @@
  * See https://github.com/decaffeinate/decaffeinate/issues/402 for some more
  * details on why decaffeinate can't solve this itself.
  */
-const { existsSync, readFileSync } = require('fs');
-const path = require('path');
+import { existsSync, readFileSync } from 'fs';
+import path from 'path';
 
-module.exports = function (fileInfo, api, options) {
+export default function (fileInfo, api, options) {
   let decodedOptions = JSON.parse(new Buffer(options['encoded-options'], 'base64'));
   let {convertedFiles, absoluteImportPaths} = decodedOptions;
   let j = api.jscodeshift;
@@ -523,7 +523,7 @@ module.exports = function (fileInfo, api, options) {
   }
 
   return convertFile();
-};
+}
 
 /**
  * Little helper since we don't have Array.prototype.includes.

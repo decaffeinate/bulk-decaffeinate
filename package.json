@@ -9,7 +9,7 @@
   },
   "scripts": {
     "prebuild": "npm run lint",
-    "build": "rollup -c",
+    "build": "rollup -c && babel jscodeshift-scripts --out-dir jscodeshift-scripts-dist",
     "lint": "eslint src test jscodeshift-scripts",
     "pretest": "npm run build",
     "test": "mocha",
@@ -29,13 +29,14 @@
   "files": [
     "bin",
     "dist",
-    "jscodeshift-scripts"
+    "jscodeshift-scripts-dist"
   ],
   "bugs": {
     "url": "https://github.com/alangpierce/bulk-decaffeinate/issues"
   },
   "homepage": "https://github.com/alangpierce/bulk-decaffeinate#readme",
   "devDependencies": {
+    "babel-cli": "^6.16.0",
     "babel-eslint": "^7.0.0",
     "babel-plugin-external-helpers": "^6.8.0",
     "babel-plugin-syntax-async-functions": "^6.13.0",

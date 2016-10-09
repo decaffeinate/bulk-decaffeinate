@@ -91,7 +91,7 @@ Re-run with the "check" command for more details.`);
     if (!absoluteImportPaths) {
       absoluteImportPaths = [];
     }
-    let scriptPath = path.join(__dirname, '../jscodeshift-scripts/fix-imports.js');
+    let scriptPath = path.join(__dirname, '../jscodeshift-scripts-dist/fix-imports.js');
     console.log('Fixing any imports across the whole codebase...');
     let options = {
       convertedFiles: jsFiles.map(p => path.resolve(p)),
