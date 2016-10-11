@@ -170,12 +170,46 @@ describe('convert', () => {
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
       assert.equal(logStdout, `\
-decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on 2 files
-decaffeinate <sample@example.com> decaffeinate: Convert 2 files to JS
-decaffeinate <sample@example.com> decaffeinate: Rename 2 files from .coffee to .js
+decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on A.coffee and 1 other file
+decaffeinate <sample@example.com> decaffeinate: Convert A.coffee and 1 other file to JS
+decaffeinate <sample@example.com> decaffeinate: Rename A.coffee and 1 other file from .coffee to .js
 Sample User <sample@example.com> Initial commit
 `
       );
+    });
+  });
+
+  it('generates a nice commit message when converting just one file', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      await initGitRepo();
+      let {stdout} = await runCli('convert --file ./A.coffee');
+      assertIncludes(stdout, 'Successfully ran decaffeinate');
+
+      let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
+      assert.equal(logStdout, `\
+decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on A.coffee
+decaffeinate <sample@example.com> decaffeinate: Convert A.coffee to JS
+decaffeinate <sample@example.com> decaffeinate: Rename A.coffee from .coffee to .js
+Sample User <sample@example.com> Initial commit
+`
+      );
+    });
+
+    it('generates a nice commit message when converting three files', async function() {
+      await runWithTemplateDir('file-list', async function () {
+        await initGitRepo();
+        let {stdout} = await runCli('convert --path-file ./files-to-decaffeinate.txt');
+        assertIncludes(stdout, 'Successfully ran decaffeinate');
+
+        let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
+        assert.equal(logStdout, `\
+decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on A.coffee and 2 other files
+decaffeinate <sample@example.com> decaffeinate: Convert A.coffee and 2 other files to JS
+decaffeinate <sample@example.com> decaffeinate: Rename A.coffee and 2 other files from .coffee to .js
+Sample User <sample@example.com> Initial commit
+`
+        );
+      });
     });
   });
 
