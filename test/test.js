@@ -244,6 +244,7 @@ let notChanged = 4;
 */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
+// This is a comment
 function f() {
   console.log('Hello world');
 }
