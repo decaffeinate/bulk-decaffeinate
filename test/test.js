@@ -134,6 +134,22 @@ describe('file-list', () => {
   });
 });
 
+describe('specifying individual files', () => {
+  it('allows specifying one file', async function() {
+    let {stdout} = await runCli('check --file test/examples/simple-success/A.coffee');
+    assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
+    assertIncludes(stdout, 'All checks succeeded');
+  });
+
+  it('allows specifying two files', async function() {
+    let {stdout} = await runCli(
+      `check --file test/examples/simple-success/A.coffee \
+        --file test/examples/simple-success/B.coffee`);
+    assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
+    assertIncludes(stdout, 'All checks succeeded');
+  });
+});
+
 describe('config files', () => {
   it('reads the list of files from a config file', async function() {
     await runWithTemplateDir('simple-config-file', async function() {
