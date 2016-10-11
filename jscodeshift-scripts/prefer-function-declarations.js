@@ -30,12 +30,17 @@ export default function transformer(file, api) {
     })
     .replaceWith(path => {
       let [declaration] = path.node.declarations;
-      return j.functionDeclaration(
+      let resultNode = j.functionDeclaration(
         declaration.id,
         declaration.init.params,
         declaration.init.body,
         declaration.init.generator,
         declaration.init.expression);
+      resultNode.comments = [];
+      resultNode.comments.push(...(path.node.comments || []));
+      resultNode.comments.push(...(declaration.comments || []));
+      resultNode.comments.push(...(declaration.init.comments || []));
+      return resultNode;
     })
     .toSource();
 }
