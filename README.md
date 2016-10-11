@@ -157,7 +157,9 @@ more information.
 * `jscodeshiftScripts`: an optional array of paths to
   [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
   decaffeinate. This is useful to automate any cleanups to convert the output of
-  decaffeinate to code matching your JS style.
+  decaffeinate to code matching your JS style. In addition, you can specify any
+  of the built-in scripts included with this package, currently just
+  `prefer-function-declarations.js`.
 * `fixImportsConfig`: an optional object. If present, a whole-codebase pass will
   be done to fix any incorrect imports involving the converted files. It should
   be an object with up to two fields:
