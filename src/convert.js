@@ -72,8 +72,9 @@ Re-run with the "check" command for more details.`);
 
   if (config.jscodeshiftScripts) {
     for (let scriptPath of config.jscodeshiftScripts) {
-      console.log(`Running jscodeshift script ${scriptPath}...`);
-      await execLive(`${config.jscodeshiftPath} -t ${scriptPath} ${jsFiles.join(' ')}`);
+      let resolvedPath = resolveJscodeshiftScriptPath(scriptPath);
+      console.log(`Running jscodeshift script ${resolvedPath}...`);
+      await execLive(`${config.jscodeshiftPath} -t ${resolvedPath} ${jsFiles.join(' ')}`);
     }
   }
 
@@ -157,6 +158,13 @@ function getShortDescription(baseFiles) {
   } else {
     return `${firstFile} and ${pluralize(baseFiles.length - 1, 'other file')}`;
   }
+}
+
+function resolveJscodeshiftScriptPath(scriptPath) {
+  if (['prefer-function-declarations.js'].includes(scriptPath)) {
+    return path.join(__dirname, `../jscodeshift-scripts-dist/${scriptPath}`);
+  }
+  return scriptPath;
 }
 
 function makeEslintFixFn(config) {

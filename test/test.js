@@ -231,6 +231,26 @@ let notChanged = 4;
     });
   });
 
+  it('runs built-in jscodeshift scripts', async function() {
+    await runWithTemplateDir('builtin-jscodeshift-script', async function() {
+      await initGitRepo();
+      let {stdout, stderr} = await runCli('convert');
+      assert.equal(stderr, '');
+      assertIncludes(stdout, 'Successfully ran decaffeinate');
+
+      await assertFileContents('./Func.js', `\
+/* eslint-disable
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+function f() {
+  console.log('Hello world');
+}
+`);
+    });
+  });
+
   it('prepends "eslint-env mocha" when specified', async function() {
     await runWithTemplateDir('mocha-env-test', async function () {
       await initGitRepo();
