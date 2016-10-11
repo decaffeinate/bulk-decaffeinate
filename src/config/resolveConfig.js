@@ -68,8 +68,11 @@ async function applyPossibleConfig(filename, config) {
  * Fill in a configuration from the CLI arguments.
  */
 function getCLIParamsConfig(commander) {
-  let {pathFile, dir, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
+  let {file, pathFile, dir, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
   let config = {};
+  if (file && file.length > 0) {
+    config.filesToProcess = file;
+  }
   if (dir) {
     config.searchDirectory = dir;
   }

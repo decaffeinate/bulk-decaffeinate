@@ -149,6 +149,9 @@ The following config keys can be specified:
 The `filesToProcess` setting has highest precedence, then `pathFile`, then
 `searchDirectory`.
 
+Each of these has a command line arg version; see the result of `--help` for
+more information.
+
 ### Other configuration
 
 * `jscodeshiftScripts`: an optional array of paths to

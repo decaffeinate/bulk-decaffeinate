@@ -16,30 +16,33 @@ export default function () {
 
   Commands:
     check: Try decaffeinate on the specified files and generate a report of
-      which files can be converted. By default, all .coffee files in the current
-      directory are used.
+                            which files can be converted. By default, all .coffee files in the current
+                            directory are used.
     convert: Run decaffeinate on the specified files and generate git commits
-      for the transition.
+                            for the transition.
     view-errors: Open failures from the most recent run in an online repl.
     clean: Delete all files ending with .original.coffee in the current
-      working directory or any of its subdirectories.`)
+                            working directory or any of its subdirectories.`)
     .action(commandArg => command = commandArg)
+    .option('-f, --file [path]',
+      `An absolute or relative path to decaffeinate. This arg may be specified 
+                            multiple times.`, (arg, args) => {args.push(arg); return args;}, [])
     .option('-p, --path-file [path]',
       `A file containing the paths of .coffee files to decaffeinate, one
-        path per line. Paths can be either absolute or relative to the
-        current working directory.`)
+                            path per line. Paths can be either absolute or relative to the
+                            current working directory.`)
     .option('-d, --dir [path]',
       `A directory containing files to decaffeinate. All .coffee files in any
-        subdirectory of this directory are considered for decaffeinate.`)
+                            subdirectory of this directory are considered for decaffeinate.`)
     .option('--decaffeinate-path [path]',
       `The path to the decaffeinate binary. If none is specified, it will be
-        automatically discovered from node_modules and then from the PATH.`)
+                            automatically discovered from node_modules and then from the PATH.`)
     .option('--jscodeshift-path [path]',
       `The path to the jscodeshift binary. If none is specified, it will be
-        automatically discovered from node_modules and then from the PATH.`)
+                            automatically discovered from node_modules and then from the PATH.`)
     .option('--eslint-path [path]',
       `The path to the eslint binary. If none is specified, it will be
-        automatically discovered from node_modules and then from the PATH.`)
+                            automatically discovered from node_modules and then from the PATH.`)
     .parse(process.argv);
 
   runCommand(command);
