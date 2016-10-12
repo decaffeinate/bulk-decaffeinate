@@ -3,7 +3,7 @@ import 'babel-polyfill';
 
 import assert from 'assert';
 import { exec } from 'mz/child_process';
-import { exists, readFile } from 'mz/fs';
+import { exists, readFile, writeFile } from 'mz/fs';
 
 import getFilesUnderPath from '../src/util/getFilesUnderPath';
 
@@ -341,6 +341,18 @@ console.log(x);
       }
       assert.equal(cliResult.stderr, '');
       assertIncludes(cliResult.stdout, 'because there was no eslint config file');
+    });
+  });
+
+  it('bypasses git commit hooks', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      await initGitRepo();
+      await writeFile('.git/hooks/commit-msg', '#!/bin/sh\nexit 1');
+      await exec('chmod +x .git/hooks/commit-msg');
+      let {stdout, stderr} = await runCli('convert');
+      assert.equal(stderr, '');
+      assertIncludes(stdout, 'Successfully ran decaffeinate');
+      assert.equal((await exec('git rev-list --count HEAD'))[0].trim(), '4');
     });
   });
 });
