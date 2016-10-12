@@ -42,7 +42,7 @@ Re-run with the "check" command for more details.`);
   let renameCommitMsg =
     `decaffeinate: Rename ${shortDescription} from .coffee to .js`;
   console.log(`Generating the first commit: "${renameCommitMsg}"...`);
-  await exec(`git commit -m "${renameCommitMsg}" --author "${gitAuthor}"`);
+  await commit(renameCommitMsg, gitAuthor);
 
   await runCommand(
     'Moving files back...',
@@ -66,7 +66,7 @@ Re-run with the "check" command for more details.`);
   let decaffeinateCommitMsg =
     `decaffeinate: Convert ${shortDescription} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
-  await exec(`git commit -m "${decaffeinateCommitMsg}" --author "${gitAuthor}"`);
+  await commit(decaffeinateCommitMsg, gitAuthor);
 
   let jsFiles = baseFiles.map(f => `${f}.js`);
 
@@ -119,7 +119,7 @@ Re-run with the "check" command for more details.`);
   let postProcessCommitMsg =
     `decaffeinate: Run post-processing cleanups on ${shortDescription}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
-  await exec(`git commit -m "${postProcessCommitMsg}" --author "${gitAuthor}"`);
+  await commit(postProcessCommitMsg, gitAuthor);
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
   console.log('You should now fix lint issues in any affected files.');
@@ -149,6 +149,10 @@ function getBaseFiles(coffeeFiles) {
 async function getGitAuthor() {
   let userEmail = (await exec('git config user.email'))[0];
   return `decaffeinate <${userEmail}>`;
+}
+
+async function commit(message, author) {
+  await exec(`git commit -m "${message}" --author "${author}" --no-verify`);
 }
 
 function getShortDescription(baseFiles) {
