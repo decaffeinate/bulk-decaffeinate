@@ -165,7 +165,8 @@ describe('convert', () => {
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
-      let {stdout} = await runCli('convert');
+      let {stdout, stderr} = await runCli('convert');
+      assert.equal(stderr, '');
       assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
@@ -182,7 +183,8 @@ Sample User <sample@example.com> Initial commit
   it('generates a nice commit message when converting just one file', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
-      let {stdout} = await runCli('convert --file ./A.coffee');
+      let {stdout, stderr} = await runCli('convert --file ./A.coffee');
+      assert.equal(stderr, '');
       assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
