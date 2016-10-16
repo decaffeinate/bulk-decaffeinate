@@ -1,12 +1,14 @@
 import { exec } from 'mz/child_process';
-import { readFile, writeFile } from 'mz/fs';
+import { copy, move, readFile, unlink, writeFile } from 'fs-promise';
 import path from 'path';
 
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
 import execLive from './util/execLive';
+import makeCommit from './util/makeCommit';
 import pluralize from './util/pluralize';
+import gitTrackedStatus from './util/gitTrackedStatus';
 
 export default async function convert(config) {
   await assertGitWorktreeClean();
@@ -23,30 +25,40 @@ Some files could not be convered with decaffeinate.
 Re-run with the "check" command for more details.`);
   }
 
-  async function runCommand(description, commandByPath, {runInSeries}={}) {
+  async function runAsync(description, asyncFn) {
     await runWithProgressBar(
-      description, baseFiles, makeCLIFn(commandByPath), {runInSeries});
+      description, baseFiles, async function(path) {
+        await asyncFn(path);
+        return {path};
+      });
   }
 
-  await runCommand(
+  await runAsync(
     'Backing up files to .original.coffee...',
-    p => `cp ${p}.coffee ${p}.original.coffee`);
+    async function(basePath) {
+      await copy(`${basePath}.coffee`, `${basePath}.original.coffee`);
+    });
 
-  await runCommand(
-    'Renaming files from .coffee to .js in git...',
-    p => `git mv ${p}.coffee ${p}.js`,
-    {runInSeries: true});
+  await runAsync(
+    'Renaming files from .coffee to .js...',
+    async function(basePath) {
+      await move(`${basePath}.coffee`, `${basePath}.js`);
+    });
 
-  let gitAuthor = await getGitAuthor();
   let shortDescription = getShortDescription(baseFiles);
   let renameCommitMsg =
     `decaffeinate: Rename ${shortDescription} from .coffee to .js`;
   console.log(`Generating the first commit: "${renameCommitMsg}"...`);
-  await commit(renameCommitMsg, gitAuthor);
+  await makeCommit(async function(index, resolvePath) {
+    await index.removeAll(baseFiles.map(p => resolvePath(`${p}.coffee`)), null, null);
+    await index.addAll(baseFiles.map(p => resolvePath(`${p}.js`)), 0, null, null);
+  }, renameCommitMsg, 'decaffeinate');
 
-  await runCommand(
+  await runAsync(
     'Moving files back...',
-    p => `mv ${p}.js ${p}.coffee`);
+    async function(basePath) {
+      await move(`${basePath}.js`, `${basePath}.coffee`);
+    });
 
   await runWithProgressBar(
     'Running decaffeinate on all files...',
@@ -54,19 +66,18 @@ Re-run with the "check" command for more details.`);
     makeCLIFn(path => `${config.decaffeinatePath} ${path}`)
   );
 
-  await runCommand(
-    'Running rm on old files...',
-    p => `rm ${p}.coffee`);
-
-  await runCommand(
-    'Running git add on new files...',
-    p => `git add ${p}.js`,
-    {runInSeries: true});
+  await runAsync(
+    'Deleting old files...',
+    async function(basePath) {
+      await unlink(`${basePath}.coffee`);
+    });
 
   let decaffeinateCommitMsg =
     `decaffeinate: Convert ${shortDescription} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
-  await commit(decaffeinateCommitMsg, gitAuthor);
+  await makeCommit(async function(index, resolvePath) {
+    await index.addAll(baseFiles.map(p => resolvePath(`${p}.js`)), 0, null, null);
+  }, decaffeinateCommitMsg, 'decaffeinate');
 
   let jsFiles = baseFiles.map(f => `${f}.js`);
 
@@ -113,13 +124,17 @@ Re-run with the "check" command for more details.`);
     }
   }
 
-  console.log(`Running git add for all files with changes...`);
-  await exec(`git add -u`);
-
   let postProcessCommitMsg =
     `decaffeinate: Run post-processing cleanups on ${shortDescription}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
-  await commit(postProcessCommitMsg, gitAuthor);
+  await makeCommit(async function(index, resolvePath) {
+    // Add unchanged files and also make sure any baseFiles are added. Otherwise
+    // we can sometimes run into a weird race condition where the last files to
+    // go through eslint --fix don't get added.
+    await index.addAll(baseFiles.map(p => resolvePath(`${p}.js`)), 0, null, null);
+    let changedFiles = await gitTrackedStatus();
+    await index.addAll(changedFiles.map(f => f.path()), 0, null, null);
+  }, postProcessCommitMsg, 'decaffeinate');
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
   console.log('You should now fix lint issues in any affected files.');
@@ -129,8 +144,8 @@ Re-run with the "check" command for more details.`);
 }
 
 async function assertGitWorktreeClean() {
-  let stdout = (await exec('git status --short --untracked-files=no'))[0];
-  if (stdout.length) {
+  let changedFiles = await gitTrackedStatus();
+  if (changedFiles.length) {
     throw new CLIError(`\
 You have modifications to your git worktree.
 Please revert or commit them before running convert.`);
@@ -144,15 +159,6 @@ function getBaseFiles(coffeeFiles) {
     }
     return coffeeFile.substring(0, coffeeFile.length - '.coffee'.length);
   });
-}
-
-async function getGitAuthor() {
-  let userEmail = (await exec('git config user.email'))[0];
-  return `decaffeinate <${userEmail}>`;
-}
-
-async function commit(message, author) {
-  await exec(`git commit -m "${message}" --author "${author}" --no-verify`);
 }
 
 function getShortDescription(baseFiles) {
