@@ -23,6 +23,5 @@ export default async function makeCommit(indexTransform, commitMessage, override
     signature,
     commitMessage,
     treeOid,
-    head ? [head] : null,
-  );
+    head ? [head] : null);
 }
