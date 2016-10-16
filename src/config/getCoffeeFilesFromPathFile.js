@@ -6,7 +6,7 @@ import CLIError from '../util/CLIError';
  * Read a list of .coffee files from a file and return it. Verify that all files
  * end in .coffee and that the files actually exist.
  */
-export default async function getCoffeeFilesFromPathFile(filePath) {
+export default async function getCoffeeFilesFromPathFile(filePath, requireValidFiles) {
   let fileContents = await readFile(filePath);
   let lines = fileContents.toString().split('\n');
   let resultLines = [];
@@ -16,10 +16,18 @@ export default async function getCoffeeFilesFromPathFile(filePath) {
       continue;
     }
     if (!line.endsWith('.coffee')) {
-      throw new CLIError(`The line "${line}" must be a file path ending in .coffee.`);
+      if (requireValidFiles) {
+        throw new CLIError(`The line "${line}" must be a file path ending in .coffee.`);
+      } else {
+        continue;
+      }
     }
     if (!(await exists(line))) {
-      throw new CLIError(`The file "${line}" did not exist.`);
+      if (requireValidFiles) {
+        throw new CLIError(`The file "${line}" did not exist.`);
+      } else {
+        continue;
+      }
     }
     resultLines.push(line);
   }

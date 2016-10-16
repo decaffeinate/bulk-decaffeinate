@@ -73,6 +73,16 @@ bulk-decaffeinate supports a number of commands:
 * `convert` actually converts the files from CofeeScript to JavaScript.
 * `clean` deletes all .original.coffee files in the current directory or any of
   its subdirectories.
+* `land` packages multiple commits into a merge commit based on an remote branch
+  (`origin/master` by default). Splitting the decaffeinate work into separate
+  commits allows git to properly track file history, but it can create added
+  difficulty after code review is finished, and `land` helps with that. The
+  `land` command does not actually push any commits; it just creates a merge
+  commit that is ready to push after a sanity check.
+  
+  If the `phabricatorAware` option is set, the `land` command does extra work to
+  make sure that every commit has a "Differential Revision" line and that the
+  final merge commit has the commit description.
 
 Here's what `convert` does in more detail:
   1. It does a dry run of decaffeinate on all files to make sure there won't be
@@ -172,6 +182,18 @@ more information.
 * `mochaEnvFilePattern`: an optional regular expression string. If specified,
   all generated JavaScript files with a path matching this pattern have the text
   `/* eslint-env mocha */` added to the start. For example, `"^.*-test.js$"`.
+* `landConfig`: an object with preferences for the `land` command. There are
+  three available options:
+  * `remote`: an optional string with the name of the remote component of the
+    branch to base commits off of. Defaults to `origin`.
+  * `upstreamBranch`: an optional string with the name of the remote branch to
+    base commits off of. Defaults to `master`. For example, if both `remote` and
+    `upstreamBranch` are unspecified, then commits are created based on
+    `origin/master`.
+  * `phabricatorAware`: an optional boolean that's useful if you're using
+    Phabricator for code review. If specified, the generated commits will all
+    have a proper "Differential Revision" line and the final merge commit will
+    be run through `arc amend` to pull in the updated commit message.
 
 ### Configuring paths to external tools
 
