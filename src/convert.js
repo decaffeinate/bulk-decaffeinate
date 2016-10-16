@@ -6,9 +6,10 @@ import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
 import execLive from './util/execLive';
+import getFilesUnderPath from './util/getFilesUnderPath';
+import gitTrackedStatus from './util/gitTrackedStatus';
 import makeCommit from './util/makeCommit';
 import pluralize from './util/pluralize';
-import gitTrackedStatus from './util/gitTrackedStatus';
 
 export default async function convert(config) {
   await assertGitWorktreeClean();
@@ -99,21 +100,27 @@ Re-run with the "check" command for more details.`);
       });
   }
 
+  let thirdCommitModifiedFiles = jsFiles.slice();
   if (config.fixImportsConfig) {
     let {searchPath, absoluteImportPaths} = config.fixImportsConfig;
     if (!absoluteImportPaths) {
       absoluteImportPaths = [];
     }
     let scriptPath = path.join(__dirname, '../jscodeshift-scripts-dist/fix-imports.js');
-    console.log('Fixing any imports across the whole codebase...');
+
     let options = {
       convertedFiles: jsFiles.map(p => path.resolve(p)),
       absoluteImportPaths: absoluteImportPaths.map(p => path.resolve(p)),
     };
-    let encodedOptions = new Buffer(JSON.stringify(options)).toString('base64');
-    await execLive(`\
-      ${config.jscodeshiftPath} -t ${scriptPath} ${searchPath}\
+    let eligibleFixImportsFiles = await getEligibleFixImportsFiles(searchPath, jsFiles);
+    console.log('Fixing any imports across the whole codebase...');
+    if (eligibleFixImportsFiles.length > 0) {
+      thirdCommitModifiedFiles = eligibleFixImportsFiles;
+      let encodedOptions = new Buffer(JSON.stringify(options)).toString('base64');
+      await execLive(`\
+      ${config.jscodeshiftPath} -t ${scriptPath} ${eligibleFixImportsFiles.join(' ')}\
         --encoded-options=${encodedOptions}`);
+    }
   }
 
   let eslintResults = await runWithProgressBar(
@@ -128,12 +135,7 @@ Re-run with the "check" command for more details.`);
     `decaffeinate: Run post-processing cleanups on ${shortDescription}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
   await makeCommit(async function(index, resolvePath) {
-    // Add unchanged files and also make sure any baseFiles are added. Otherwise
-    // we can sometimes run into a weird race condition where the last files to
-    // go through eslint --fix don't get added.
-    await index.addAll(baseFiles.map(p => resolvePath(`${p}.js`)), 0, null, null);
-    let changedFiles = await gitTrackedStatus();
-    await index.addAll(changedFiles.map(f => f.path()), 0, null, null);
+    await index.addAll(thirdCommitModifiedFiles.map(resolvePath), 0, null, null);
   }, postProcessCommitMsg, 'decaffeinate');
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
@@ -175,6 +177,30 @@ function resolveJscodeshiftScriptPath(scriptPath) {
     return path.join(__dirname, `../jscodeshift-scripts-dist/${scriptPath}`);
   }
   return scriptPath;
+}
+
+async function getEligibleFixImportsFiles(searchPath, jsFiles) {
+  let jsBasenames = jsFiles.map(p => path.basename(p, '.js'));
+  let resolvedPaths = jsFiles.map(p => path.resolve(p));
+  let allJsFiles = await getFilesUnderPath(searchPath, p => p.endsWith('.js'));
+  await runWithProgressBar(
+    'Searching for files that may need to have updated imports...',
+    allJsFiles,
+    async function(p) {
+      let resolvedPath = path.resolve(p);
+      if (resolvedPaths.includes(resolvedPath)) {
+        return {error: null};
+      }
+      let contents = (await readFile(resolvedPath)).toString();
+      for (let basename of jsBasenames) {
+        if (contents.includes(basename)) {
+          resolvedPaths.push(resolvedPath);
+          return {error: null};
+        }
+      }
+      return {error: null};
+    });
+  return resolvedPaths;
 }
 
 function makeEslintFixFn(config) {
