@@ -13,8 +13,11 @@ import execLive from '../util/execLive';
  * Resolve the configuration from a number of sources: any number of config
  * files and CLI options. Then "canonicalize" the config, e.g. by resolving the
  * list of files to process and inferring any paths if necessary.
+ *
+ * Some commands don't actually use the list of files, so we shouldn't do file
+ * sanity checks for those.
  */
-export default async function resolveConfig(commander) {
+export default async function resolveConfig(commander, requireValidFiles = true) {
   let config = {};
 
   let currentDirFiles = await readdir('.');
@@ -23,12 +26,13 @@ export default async function resolveConfig(commander) {
     config = await applyPossibleConfig(filename, config);
   }
   config = Object.assign(config, getCLIParamsConfig(commander));
-  let filesToProcess = await resolveFilesToProcess(config);
+  let filesToProcess = await resolveFilesToProcess(config, requireValidFiles);
   await validateFilesToProcess(filesToProcess);
   return {
     filesToProcess,
     fixImportsConfig: config.fixImportsConfig,
     jscodeshiftScripts: config.jscodeshiftScripts,
+    landConfig: config.landConfig,
     mochaEnvFilePattern: config.mochaEnvFilePattern,
     decaffeinatePath: await resolveDecaffeinatePath(config),
     jscodeshiftPath: await resolveJscodeshiftPath(config),
@@ -91,13 +95,13 @@ function getCLIParamsConfig(commander) {
   return config;
 }
 
-async function resolveFilesToProcess(config) {
+async function resolveFilesToProcess(config, requireValidFiles) {
   let {filesToProcess, pathFile, searchDirectory} = config;
   if (filesToProcess) {
     return filesToProcess;
   }
   if (pathFile) {
-    return await getCoffeeFilesFromPathFile(pathFile);
+    return await getCoffeeFilesFromPathFile(pathFile, requireValidFiles);
   }
   if (searchDirectory) {
     return await getCoffeeFilesUnderPath(searchDirectory);

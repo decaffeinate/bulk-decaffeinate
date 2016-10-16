@@ -5,6 +5,7 @@ import check from './check';
 import clean from './clean';
 import resolveConfig from './config/resolveConfig';
 import convert from './convert';
+import land from './land';
 import CLIError from './util/CLIError';
 import viewErrors from './viewErrors';
 
@@ -22,6 +23,8 @@ export default function () {
                             for the transition.
     view-errors: Open failures from the most recent run in an online repl.
     clean: Delete all files ending with .original.coffee in the current
+                            working directory or any of its subdirectories.
+    land: Create a merge commit with al
                             working directory or any of its subdirectories.`)
     .action(commandArg => command = commandArg)
     .option('-f, --file [path]',
@@ -60,6 +63,9 @@ async function runCommand(command) {
       await viewErrors();
     } else if (command === 'clean') {
       await clean();
+    } else if (command === 'land') {
+      let config = await resolveConfig(commander, false);
+      await land(config);
     } else {
       commander.outputHelp();
     }
