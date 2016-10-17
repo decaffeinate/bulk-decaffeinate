@@ -13,6 +13,9 @@ export default class CLIError extends Error {
   }
 
   static formatError(e) {
+    if (!e) {
+      return e;
+    }
     if (e.message.startsWith(PREFIX)) {
       return e.message.substring(PREFIX.length);
     } else {
