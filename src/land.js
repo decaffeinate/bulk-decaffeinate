@@ -56,13 +56,12 @@ Please rebase your changes and retry "bulk-decaffeinate land"`);
 
   console.log(`Creating merge commit on ${remoteBranch}`);
   let cherryPickHeadCommit = await repo.getHeadCommit();
-  let cherryPickHead = await Git.AnnotatedCommit.fromRef(repo, await repo.head());
   await repo.checkoutRef(remoteRef);
   let mergeMessage = `Merge decaffeinate changes into ${remoteBranch}`;
   if (phabricatorAware) {
     mergeMessage += `\n\n${differentialRevisionLine}`;
   }
-  await createMergeCommit(repo, cherryPickHead, cherryPickHeadCommit, mergeMessage);
+  await createMergeCommit(repo, cherryPickHeadCommit, mergeMessage);
   if (phabricatorAware) {
     console.log('Pulling commit message from Phabricator.');
     await exec('arc amend');
@@ -131,10 +130,15 @@ Expected to find a "Differential Revision" line in at least one commit.`);
   return resultLine;
 }
 
-async function createMergeCommit(repo, cherryPickHead, cherryPickHeadCommit, mergeMessage) {
-  await Git.Merge.merge(repo, cherryPickHead);
-  repo.stateCleanup();
+async function createMergeCommit(repo, otherCommit, mergeMessage) {
+  let annotatedCommit = await Git.AnnotatedCommit.lookup(repo, otherCommit.id());
+  await Git.Merge.merge(repo, annotatedCommit, null, {
+    checkoutStrategy: Git.Checkout.STRATEGY.FORCE,
+  });
   let index = await repo.refreshIndex();
+  if (index.hasConflicts()) {
+    throw new CLIError('Unexpected conflict when creating merge commit.');
+  }
   await index.write();
   let treeOid = await index.writeTree();
   await repo.createCommit(
@@ -143,6 +147,7 @@ async function createMergeCommit(repo, cherryPickHead, cherryPickHeadCommit, mer
     repo.defaultSignature(),
     mergeMessage,
     treeOid,
-    [await repo.getHeadCommit(), cherryPickHeadCommit]
+    [await repo.getHeadCommit(), otherCommit]
   );
+  repo.stateCleanup();
 }
