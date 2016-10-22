@@ -6,16 +6,18 @@ import CLIError from './util/CLIError';
 /**
  * The land option "packages" a set of commits into a single merge commit that
  * can be pushed. Splitting the decaffeinate work up into different commits
- * allows
+ * allows git to properly track file history when a file is changed from
+ * CoffeeScript to JavaScript.
  *
  * A typical use case is that the merge commit will include 4 commits: the three
  * auto-generated decaffeinate commits and a follow-up commit to fix lint
- * errors. The merge commit is a default author name
+ * errors. Unlike the auto-generated decaffeinate commits, the merge commit is
+ * created with the default author name.
  */
 export default async function land(config) {
   let remote = config.landConfig && config.landConfig.remote;
   let upstreamBranch = config.landConfig && config.landConfig.upstreamBranch;
-  let phabricatorAware = config.landConfig && config.landConfig.phabricatorAware;  // eslint-disable-line
+  let phabricatorAware = config.landConfig && config.landConfig.phabricatorAware;
   if (!remote) {
     console.log('No remote was specified. Defaulting to origin.');
     remote = 'origin';
