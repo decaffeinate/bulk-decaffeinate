@@ -27,7 +27,9 @@ export default async function resolveConfig(commander, requireValidFiles = true)
   }
   config = Object.assign(config, getCLIParamsConfig(commander));
   let filesToProcess = await resolveFilesToProcess(config, requireValidFiles);
-  await validateFilesToProcess(filesToProcess);
+  if (requireValidFiles) {
+    await validateFilesToProcess(filesToProcess);
+  }
   return {
     filesToProcess,
     fixImportsConfig: config.fixImportsConfig,
