@@ -20,9 +20,14 @@
  */
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';
+import zlib from 'zlib';
 
 export default function (fileInfo, api, options) {
-  let decodedOptions = JSON.parse(new Buffer(options['encoded-options'], 'base64'));
+  let decodedOptions = JSON.parse(
+    zlib.inflateSync(
+      new Buffer(options['encoded-options'], 'base64')
+    ).toString()
+  );
   let {convertedFiles, absoluteImportPaths} = decodedOptions;
   let j = api.jscodeshift;
   let thisFilePath = path.resolve(fileInfo.path);
