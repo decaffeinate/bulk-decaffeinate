@@ -1,6 +1,7 @@
 import { exec } from 'mz/child_process';
 import { copy, move, readFile, unlink, writeFile } from 'fs-promise';
 import path from 'path';
+import zlib from 'zlib';
 
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
@@ -115,10 +116,14 @@ Re-run with the "check" command for more details.`);
     let eligibleFixImportsFiles = await getEligibleFixImportsFiles(searchPath, jsFiles);
     console.log('Fixing any imports across the whole codebase...');
     if (eligibleFixImportsFiles.length > 0) {
+      // Note that the args can get really long, so we take reasonable steps to
+      // reduce the chance of hitting the system limit on arg length
+      // (256K by default on Mac).
+      let eligibleRelativePaths = eligibleFixImportsFiles.map(p => path.relative('', p));
       thirdCommitModifiedFiles = eligibleFixImportsFiles;
-      let encodedOptions = new Buffer(JSON.stringify(options)).toString('base64');
+      let encodedOptions = zlib.deflateSync(JSON.stringify(options)).toString('base64');
       await execLive(`\
-      ${config.jscodeshiftPath} -t ${scriptPath} ${eligibleFixImportsFiles.join(' ')}\
+      ${config.jscodeshiftPath} -t ${scriptPath} ${eligibleRelativePaths.join(' ')}\
         --encoded-options=${encodedOptions}`);
     }
   }
