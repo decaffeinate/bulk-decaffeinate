@@ -1,7 +1,7 @@
 import runInParallel from './runInParallel';
 import pluralize from '../util/pluralize';
 
-const NUM_CONCURRENT_PROCESSES = 4;
+const NUM_CONCURRENT_PROCESSES = 8;
 
 /**
  * Run the given command in parallel, showing a progress bar of results.
