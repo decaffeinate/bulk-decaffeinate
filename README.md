@@ -198,6 +198,10 @@ more information.
     Phabricator for code review. If specified, the generated commits will all
     have a proper "Differential Revision" line and the final merge commit will
     be run through `arc amend` to pull in the updated commit message.
+* `skipVerify`: set to `true` to skip the initial verification step when running
+  the `convert` command. This makes bulk-decaffeinate take less time, but if any
+  files fail to convert, it may leave the filesystem in a partially-converted
+  state.
 
 ### Configuring paths to external tools
 
