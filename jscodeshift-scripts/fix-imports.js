@@ -80,6 +80,11 @@ export default function (fileInfo, api, options) {
       return path.node;
     }
     let exportsInfo = getExportsInformation(resolvedPath);
+    // If we didn't see anything on the other side, it might not even be a JS
+    // module, so just leave this import as-is.
+    if (!exportsInfo.hasDefaultExport && exportsInfo.namedExports.length === 0) {
+      return path.node;
+    }
     let specifierIndex = getSpecifierIndex(path);
     let memberAccesses = findAllMemberAccesses(specifierIndex);
     let importManifest = getImportManifest(exportsInfo, memberAccesses);
