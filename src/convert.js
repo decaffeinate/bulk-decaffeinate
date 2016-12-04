@@ -17,10 +17,12 @@ export default async function convert(config) {
 
   let coffeeFiles = config.filesToProcess;
   let baseFiles = getBaseFiles(coffeeFiles);
+  let {decaffeinateArgs = [], decaffeinatePath} = config;
 
   let decaffeinateResults = await runWithProgressBar(
     'Verifying that decaffeinate can successfully convert these files...',
-    coffeeFiles, makeCLIFn(path => `${config.decaffeinatePath} < ${path}`));
+    coffeeFiles, makeCLIFn(path =>
+      `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`));
   if (decaffeinateResults.filter(r => r.error !== null).length > 0) {
     throw new CLIError(`\
 Some files could not be convered with decaffeinate.
@@ -65,7 +67,7 @@ Re-run with the "check" command for more details.`);
   await runWithProgressBar(
     'Running decaffeinate on all files...',
     coffeeFiles,
-    makeCLIFn(path => `${config.decaffeinatePath} ${path}`)
+    makeCLIFn(path => `${decaffeinatePath} ${decaffeinateArgs.join(' ')} ${path}`)
   );
 
   await runAsync(

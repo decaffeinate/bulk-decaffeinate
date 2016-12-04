@@ -5,10 +5,10 @@ import runWithProgressBar from './runner/runWithProgressBar';
 import pluralize from './util/pluralize';
 
 export default async function check(config) {
-  let {filesToProcess, decaffeinatePath} = config;
+  let {filesToProcess, decaffeinateArgs = [], decaffeinatePath} = config;
   let decaffeinateResults = await runWithProgressBar(
     `Doing a dry run of decaffeinate on ${pluralize(filesToProcess.length, 'file')}...`,
-    filesToProcess, makeCLIFn(path => `${decaffeinatePath} < ${path}`));
+    filesToProcess, makeCLIFn(path => `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`));
   await printResults(decaffeinateResults);
 }
 

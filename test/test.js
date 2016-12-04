@@ -162,12 +162,17 @@ describe('config files', () => {
 });
 
 describe('convert', () => {
+  async function runCliExpectSuccess(command) {
+    let {stdout, stderr} = await runCli(command);
+    assert(stderr.length === 0, `Nonempty stderr. stderr:\n${stderr}\n\nstdout:\n${stdout}`);
+    assertIncludes(stdout, 'Successfully ran decaffeinate');
+    return {stdout, stderr};
+  }
+
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
-      let {stdout, stderr} = await runCli('convert');
-      assert.equal(stderr, '');
-      assertIncludes(stdout, 'Successfully ran decaffeinate');
+      await runCliExpectSuccess('convert');
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
       assert.equal(logStdout, `\
@@ -183,10 +188,7 @@ Sample User <sample@example.com> Initial commit
   it('generates a nice commit message when converting just one file', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
-      let {stdout, stderr} = await runCli('convert --file ./A.coffee');
-      assert.equal(stderr, '');
-      assertIncludes(stdout, 'Successfully ran decaffeinate');
-
+      await runCliExpectSuccess('convert --file ./A.coffee');
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
       assert.equal(logStdout, `\
 decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on A.coffee
@@ -200,9 +202,7 @@ Sample User <sample@example.com> Initial commit
     it('generates a nice commit message when converting three files', async function() {
       await runWithTemplateDir('file-list', async function () {
         await initGitRepo();
-        let {stdout} = await runCli('convert --path-file ./files-to-decaffeinate.txt');
-        assertIncludes(stdout, 'Successfully ran decaffeinate');
-
+        await runCliExpectSuccess('convert --path-file ./files-to-decaffeinate.txt');
         let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
         assert.equal(logStdout, `\
 decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on A.coffee and 2 other files
@@ -218,9 +218,7 @@ Sample User <sample@example.com> Initial commit
   it('runs jscodeshift', async function() {
     await runWithTemplateDir('jscodeshift-test', async function() {
       await initGitRepo();
-      let {stdout} = await runCli('convert');
-      assertIncludes(stdout, 'Successfully ran decaffeinate');
-
+      await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 /* eslint-disable
     no-unused-vars,
@@ -236,10 +234,7 @@ let notChanged = 4;
   it('runs built-in jscodeshift scripts', async function() {
     await runWithTemplateDir('builtin-jscodeshift-script', async function() {
       await initGitRepo();
-      let {stdout, stderr} = await runCli('convert');
-      assert.equal(stderr, '');
-      assertIncludes(stdout, 'Successfully ran decaffeinate');
-
+      await runCliExpectSuccess('convert');
       await assertFileContents('./Func.js', `\
 /* eslint-disable
     no-unused-vars,
@@ -257,9 +252,7 @@ function f() {
   it('prepends "eslint-env mocha" when specified', async function() {
     await runWithTemplateDir('mocha-env-test', async function () {
       await initGitRepo();
-      let {stdout} = await runCli('convert');
-      assertIncludes(stdout, 'Successfully ran decaffeinate');
-
+      await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 // TODO: This file was created by bulk-decaffeinate.
 // Sanity-check the conversion and remove this comment.
@@ -275,12 +268,27 @@ console.log('This is test code');
     });
   });
 
+  it('respects decaffeinate args', async function() {
+    await runWithTemplateDir('decaffeinate-args-test', async function () {
+      await initGitRepo();
+      await runCliExpectSuccess('convert');
+      await assertFileContents('./A.js', `\
+/* eslint-disable
+    no-undef,
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+let a = require('b');
+module.exports = c;
+`);
+    });
+  });
+
   it('runs eslint, applying fixes and disabling existing issues', async function() {
     await runWithTemplateDir('eslint-fix-test', async function() {
       await initGitRepo();
-      let {stdout} = await runCli('convert');
-      assertIncludes(stdout, 'Successfully ran decaffeinate');
-
+      await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 /* eslint-disable
     no-console,
@@ -351,9 +359,7 @@ console.log(x);
       await initGitRepo();
       await writeFile('.git/hooks/commit-msg', '#!/bin/sh\nexit 1');
       await exec('chmod +x .git/hooks/commit-msg');
-      let {stdout, stderr} = await runCli('convert');
-      assert.equal(stderr, '');
-      assertIncludes(stdout, 'Successfully ran decaffeinate');
+      await runCliExpectSuccess('convert');
       assert.equal((await exec('git rev-list --count HEAD'))[0].trim(), '4');
     });
   });

@@ -31,6 +31,7 @@ export default async function resolveConfig(commander, requireValidFiles = true)
     await validateFilesToProcess(filesToProcess);
   }
   return {
+    decaffeinateArgs: config.decaffeinateArgs,
     filesToProcess,
     fixImportsConfig: config.fixImportsConfig,
     jscodeshiftScripts: config.jscodeshiftScripts,
