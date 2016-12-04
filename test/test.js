@@ -421,4 +421,8 @@ describe('fix-imports', () => {
   it('only does relative path resolution when an import is relative style', async function() {
     await runFixImportsTest('fix-imports-non-relative-path');
   });
+
+  it('makes no changes when the other file is not a JS module', async function() {
+    await runFixImportsTest('fix-imports-import-commonjs');
+  });
 });
