@@ -37,6 +37,7 @@ export default async function resolveConfig(commander, requireValidFiles = true)
     jscodeshiftScripts: config.jscodeshiftScripts,
     landConfig: config.landConfig,
     mochaEnvFilePattern: config.mochaEnvFilePattern,
+    landBase: config.landBase,
     skipVerify: config.skipVerify,
     decaffeinatePath: await resolveDecaffeinatePath(config),
     jscodeshiftPath: await resolveJscodeshiftPath(config),
@@ -76,7 +77,7 @@ async function applyPossibleConfig(filename, config) {
  * Fill in a configuration from the CLI arguments.
  */
 function getCLIParamsConfig(commander) {
-  let {file, pathFile, dir, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
+  let {file, pathFile, dir, landBase, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
   let config = {};
   if (file && file.length > 0) {
     config.filesToProcess = file;
@@ -86,6 +87,9 @@ function getCLIParamsConfig(commander) {
   }
   if (pathFile) {
     config.pathFile = pathFile;
+  }
+  if (landBase) {
+    config.landBase = landBase;
   }
   if (decaffeinatePath) {
     config.decaffeinatePath = decaffeinatePath;

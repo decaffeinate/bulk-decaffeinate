@@ -29,9 +29,10 @@ export default async function land(config) {
   let remoteBranch = `${remote}/${upstreamBranch}`;
   console.log(`Running fetch for ${remote}.`);
   let repo = await Git.Repository.openExt('.', 0, '');
+
   await fetch(repo, remote);
 
-  let commits = await getCommits(repo);
+  let commits = await getCommits(repo, config);
   console.log(`Found ${commits.length} commits to use.`);
 
   let differentialRevisionLine = phabricatorAware ? getDifferentialRevisionLine(commits) : null;
@@ -85,15 +86,26 @@ async function fetch(repo, remote) {
   });
 }
 
-async function getCommits(repo) {
+async function getCommits(repo, config) {
+  let explicitBase = null;
+  if (config.landBase) {
+    explicitBase = await Git.Revparse.single(repo, config.landBase);
+  }
+
   let commit = await repo.getHeadCommit();
   let commits = [];
-  let i = 0;
+  let i;
   let hasSeenDecaffeinateCommit = false;
   for (i = 0; i < 20; i++) {
     let isDecaffeinateCommit = commit.author().name() === 'decaffeinate';
-    if (hasSeenDecaffeinateCommit && !isDecaffeinateCommit) {
-      break;
+    if (explicitBase !== null) {
+      if (explicitBase.id().cmp(commit.id()) === 0) {
+        break;
+      }
+    } else {
+      if (hasSeenDecaffeinateCommit && !isDecaffeinateCommit) {
+        break;
+      }
     }
     if (!hasSeenDecaffeinateCommit && isDecaffeinateCommit) {
       hasSeenDecaffeinateCommit = true;
