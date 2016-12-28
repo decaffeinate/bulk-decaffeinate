@@ -172,8 +172,11 @@ more information.
   [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
   decaffeinate. This is useful to automate any cleanups to convert the output of
   decaffeinate to code matching your JS style. In addition, you can specify any
-  of the built-in scripts included with this package, currently just
-  `prefer-function-declarations.js`.
+  of the built-in scripts included with this package:
+  * `prefer-function-declarations.js`: change `let f = function() {}` into
+    `function f() {}` when possible.
+  * `remove-coffee-from-imports.js`: change `import` and `require` statements
+    for .coffee files to no longer specify an extension.
 * `fixImportsConfig`: an optional object. If present, a whole-codebase pass will
   be done to fix any incorrect imports involving the converted files. It should
   be an object with up to two fields:

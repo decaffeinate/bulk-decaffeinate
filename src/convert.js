@@ -182,7 +182,10 @@ function getShortDescription(baseFiles) {
 }
 
 function resolveJscodeshiftScriptPath(scriptPath) {
-  if (['prefer-function-declarations.js'].includes(scriptPath)) {
+  if ([
+      'prefer-function-declarations.js',
+      'remove-coffee-from-imports.js',
+    ].includes(scriptPath)) {
     return path.join(__dirname, `../jscodeshift-scripts-dist/${scriptPath}`);
   }
   return scriptPath;
