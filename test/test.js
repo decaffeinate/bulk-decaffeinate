@@ -161,6 +161,17 @@ describe('config files', () => {
   });
 });
 
+describe('file filtering', () => {
+  it('excludes a file when instructed', async function() {
+    await runWithTemplateDir('file-filter', async function() {
+      let {stdout, stderr} = await runCli('check');
+      assert.equal(stderr, '');
+      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
+      assertIncludes(stdout, 'All checks succeeded');
+    });
+  });
+});
+
 describe('convert', () => {
   async function runCliExpectSuccess(command) {
     let {stdout, stderr} = await runCli(command);
