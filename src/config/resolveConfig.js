@@ -27,6 +27,7 @@ export default async function resolveConfig(commander, requireValidFiles = true)
   }
   config = Object.assign(config, getCLIParamsConfig(commander));
   let filesToProcess = await resolveFilesToProcess(config, requireValidFiles);
+  filesToProcess = resolveFileFilter(filesToProcess, config);
   if (requireValidFiles) {
     await validateFilesToProcess(filesToProcess);
   }
@@ -115,6 +116,13 @@ async function resolveFilesToProcess(config, requireValidFiles) {
     return await getCoffeeFilesUnderPath(searchDirectory);
   }
   return await getCoffeeFilesUnderPath('.');
+}
+
+function resolveFileFilter(filesToProcess, config) {
+  if (!config.fileFilterFn) {
+    return filesToProcess;
+  }
+  return filesToProcess.filter(path => config.fileFilterFn(resolve(path)));
 }
 
 async function resolveDecaffeinatePath(config) {

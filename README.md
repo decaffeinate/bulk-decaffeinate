@@ -155,6 +155,10 @@ The following config keys can be specified:
 * `pathFile`: a path to a file containing a list of .coffee file paths to
   process, one per line.
 * `filesToProcess`: an array of .coffee file paths to process.
+* `fileFilterFn`: a optional JavaScript function that takes the absolute path of
+  a file to consider and returns false if the file should be excluded. This is
+  run after the normal file discovery process, and is useful if there are
+  specific files or directories that should not be converted.
 
 The `filesToProcess` setting has highest precedence, then `pathFile`, then
 `searchDirectory`.
