@@ -258,6 +258,10 @@ import a from './A';
 function f() {
   console.log('Hello world');
 }
+
+function arrow() {
+  return 3 + 4;
+}
 `);
     });
   });

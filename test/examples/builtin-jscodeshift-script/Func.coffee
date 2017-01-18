@@ -3,3 +3,6 @@ a = require('./A.coffee')
 f = ->
   console.log 'Hello world'
   return
+
+arrow = ->
+  3 + 4
