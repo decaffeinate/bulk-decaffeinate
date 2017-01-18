@@ -242,7 +242,7 @@ let notChanged = 4;
     });
   });
 
-  it('runs built-in jscodeshift scripts', async function() {
+  it.only('runs built-in jscodeshift scripts', async function() {
     await runWithTemplateDir('builtin-jscodeshift-script', async function() {
       await initGitRepo();
       await runCliExpectSuccess('convert');
@@ -257,6 +257,10 @@ import a from './A';
 // This is a comment
 function f() {
   console.log('Hello world');
+}
+
+function arrow() {
+  return 3 + 4;
 }
 `);
     });

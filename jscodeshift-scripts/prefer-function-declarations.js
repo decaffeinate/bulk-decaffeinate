@@ -24,22 +24,35 @@ export default function transformer(file, api) {
         return false;
       }
       let [declaration] = path.node.declarations;
-      return declaration.init &&
-        declaration.init.type === 'FunctionExpression' &&
-        declaration.init.id === null;
+
+      if (j.FunctionExpression.check(declaration.init)) {
+        return declaration.init.id === null;
+      }
+
+      if (j.ArrowFunctionExpression.check(declaration.init)) {
+        return j.Program.check(path.parent.node);
+      }
+
+      return false;
     })
     .replaceWith(path => {
       let [declaration] = path.node.declarations;
+      let body = j.BlockStatement.check(declaration.init.body) ?
+        declaration.init.body :
+        j.blockStatement([
+          j.returnStatement(declaration.init.body),
+        ]);
       let resultNode = j.functionDeclaration(
         declaration.id,
         declaration.init.params,
-        declaration.init.body,
+        body,
         declaration.init.generator,
         declaration.init.expression);
-      resultNode.comments = [];
-      resultNode.comments.push(...(path.node.comments || []));
-      resultNode.comments.push(...(declaration.comments || []));
-      resultNode.comments.push(...(declaration.init.comments || []));
+      resultNode.comments = [
+        ...(path.node.comments || []),
+        ...(declaration.comments || []),
+        ...(declaration.init.comments || []),
+      ];
       return resultNode;
     })
     .toSource();
