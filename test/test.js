@@ -242,7 +242,7 @@ let notChanged = 4;
     });
   });
 
-  it.only('runs built-in jscodeshift scripts', async function() {
+  it('runs built-in jscodeshift scripts', async function() {
     await runWithTemplateDir('builtin-jscodeshift-script', async function() {
       await initGitRepo();
       await runCliExpectSuccess('convert');
