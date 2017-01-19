@@ -6,3 +6,7 @@ f = ->
 
 arrow = ->
   3 + 4
+
+arrowWithComment = ->
+  # This is a comment
+  5

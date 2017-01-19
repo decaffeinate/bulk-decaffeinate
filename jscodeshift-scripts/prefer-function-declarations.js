@@ -37,11 +37,21 @@ export default function transformer(file, api) {
     })
     .replaceWith(path => {
       let [declaration] = path.node.declarations;
-      let body = j.BlockStatement.check(declaration.init.body) ?
-        declaration.init.body :
-        j.blockStatement([
+      let body;
+      if (j.BlockStatement.check(declaration.init.body)) {
+        body = declaration.init.body;
+      } else {
+        const comments = declaration.init.body.comments;
+        body = j.blockStatement([
           j.returnStatement(declaration.init.body),
         ]);
+        // Work around a bug in jscodeshift/recast where the comment, including
+        // its newline, can be placed between the return and the expression,
+        // causing ASI to treat it as an empty return followed by an expression
+        // statement.
+        declaration.init.body.comments = [];
+        body.body[0].comments = comments;
+      }
       let resultNode = j.functionDeclaration(
         declaration.id,
         declaration.init.params,
