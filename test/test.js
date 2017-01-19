@@ -262,6 +262,11 @@ function f() {
 function arrow() {
   return 3 + 4;
 }
+
+function arrowWithComment() {
+  // This is a comment
+  return 5;
+}
 `);
     });
   });
