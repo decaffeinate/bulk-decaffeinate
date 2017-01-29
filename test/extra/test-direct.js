@@ -2,16 +2,33 @@
 import assert from 'assert';
 import { exec } from 'mz/child_process';
 import { exists, readFile, writeFile, mkdtemp, mkdir } from 'mz/fs';
-import { join, sep, normalize } from 'path';
+import { join, sep, normalize, resolve } from 'path';
 
+import getFilesUnderPath from '../../src/util/getFilesUnderPath';
+import cli from '../../src/cli';
+const {runCommand, argParse} = cli;
 
-import getFilesUnderPath from '../src/util/getFilesUnderPath';
+const originalCwd = resolve(join(__dirname, '..', '..'));
 
-let originalCwd = process.cwd();
+Error.stackTraceLimit = 1000;
 
+class MockStream {
+ constructor() {
+   this.str = '';
+ }
+ write(str) {
+   this.str += str;
+ }
+}
+
+/**
+ * @desc does basically the same as `mkdir -p` but in-proc, and last child is a tmpDir.
+ * doesn't throw if parts of the path already exist.
+ * @param {string} prefix
+ * @returns {Promise.<string>}
+ */
 async function mkdTempSafe (prefix) {
   let parts = normalize(prefix).split(sep);
-  // let last = parts.pop();
   let head = '';
   for (let part of parts) {
     try {
@@ -25,36 +42,48 @@ async function mkdTempSafe (prefix) {
   return await mkdtemp(prefix);
 }
 
-async function runCli(args) {
-  let [stdout, stderr] = (await exec(`node "${join(originalCwd,'bin','bulk-decaffeinate')}" \
-    --decaffeinate-path "${join(originalCwd, 'node_modules', '.bin', 'decaffeinate')}" \
-    --jscodeshift-path "${join(originalCwd, 'node_modules', '.bin', 'jscodeshift')}" \
-    --eslint-path "${join(originalCwd, 'node_modules', '.bin', 'eslint')}" \
-    ${args}`));
+async function runCli (args) {
+  let argv = ['"fake"', '"gaga"',
+    '--decaffeinate-path', `"${join(originalCwd, 'node_modules', '.bin', 'decaffeinate')}"`,
+    '--jscodeshift-path', `"${join(originalCwd, 'node_modules', '.bin', 'jscodeshift')}"`,
+    '--eslint-path', `"${join(originalCwd, 'node_modules', '.bin', 'eslint')}"`,
+    ...args.split(' '),
+  ];
+  let [command, config] = await argParse(argv);
+  let oldConsole = global.console;
+  let strm1 = new MockStream();
+  let strm2 = new MockStream();
+  Object.defineProperty(global, 'console', {value: new console.Console(strm1, strm2)});
+  try {
+    await runCommand(command, config);
+  } finally {
+    Object.defineProperty(global, 'console', {value: oldConsole});
+  }
+  let [stdout, stderr] = [strm1.str, strm2.str];
   return {stdout, stderr};
 }
 
-function assertIncludes(output, substr) {
+function assertIncludes (output, substr) {
   assert(
     output.includes(substr),
-    `Expected the output to include "${substr}".\n\nFull output:\n${output}`
+    `Expected the output to include '${substr}'.\n\nFull output:\n${output}`
   );
 }
 
-async function assertFileContents(path, expectedContents) {
+async function assertFileContents (path, expectedContents) {
   let contents = (await readFile(path)).toString();
   assert.equal(contents, expectedContents);
 }
 
-async function assertFileIncludes(path, expectedSubstr) {
+async function assertFileIncludes (path, expectedSubstr) {
   let contents = (await readFile(path)).toString();
   assert(
     contents.includes(expectedSubstr),
-    `Expected file to include "${expectedSubstr}".\n\nFull file contents:\n${contents}`
+    `Expected file to include '${expectedSubstr}'.\n\nFull file contents:\n${contents}`
   );
 }
 
-async function assertFilesEqual(actualFile, expectedFile) {
+async function assertFilesEqual (actualFile, expectedFile) {
   let actualContents = (await readFile(actualFile)).toString();
   let expectedContents = (await readFile(expectedFile)).toString();
   assert.equal(
@@ -67,12 +96,12 @@ async function assertFilesEqual(actualFile, expectedFile) {
  * Run the given async function inside a temporary directory starting from the
  * given example.
  */
-async function runWithTemplateDir(exampleName, fn) {
+async function runWithTemplateDir (exampleName, fn) {
   let newDirPref = `./test/tmp-projects/${exampleName}/tmp-`;
   let newDir;
   try {
     newDir = await mkdTempSafe(newDirPref);
-    await exec(`cp -r "./test/examples/${exampleName}/." "${newDir}"`);
+    await exec(`cp -r './test/examples/${exampleName}/.' '${newDir}'`);
     process.chdir(newDir);
     await fn();
   } catch (e) {
@@ -84,7 +113,7 @@ async function runWithTemplateDir(exampleName, fn) {
   }
 }
 
-async function initGitRepo() {
+async function initGitRepo () {
   await exec('git init');
   await exec('git config user.name "Sample User"');
   await exec('git config user.email "sample@example.com"');
@@ -93,7 +122,7 @@ async function initGitRepo() {
 }
 
 describe('basic CLI', () => {
-  it('shows a help message when invoked with no arguments', async function() {
+  it('shows a help message when invoked with no arguments', async function () {
     let {stdout} = await runCli('');
     assertIncludes(stdout, 'Usage:');
     assertIncludes(stdout, 'Commands:');
@@ -102,14 +131,14 @@ describe('basic CLI', () => {
 });
 
 describe('simple-success', () => {
-  it('discovers and runs files', async function() {
+  it('discovers and runs files', async function () {
     let {stdout} = await runCli('check -d test/examples/simple-success');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
     assertIncludes(stdout, 'All checks succeeded');
   });
 
-  it('runs files from the current directory', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+  it('runs files from the current directory', async function () {
+    await runWithTemplateDir('simple-success', async function () {
       let {stdout} = await runCli('check');
       assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
       assertIncludes(stdout, 'All checks succeeded');
@@ -118,14 +147,14 @@ describe('simple-success', () => {
 });
 
 describe('simple-error', () => {
-  it('discovers two files and fails on one', async function() {
+  it('discovers two files and fails on one', async function () {
     let {stdout} = await runCli('check -d test/examples/simple-error');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
     assertIncludes(stdout, '1 file failed to convert');
 
     await assertFileIncludes(
       'decaffeinate-errors.log',
-      `===== ${join('test','examples','simple-error','error.coffee')}`
+      `===== ${join('test', 'examples', 'simple-error', 'error.coffee')}`
     );
 
     let results = JSON.parse((await readFile('decaffeinate-results.json')).toString());
@@ -143,7 +172,7 @@ describe('simple-error', () => {
 });
 
 describe('file-list', () => {
-  it('reads a path file containing two lines, and ignores the other file', async function() {
+  it('reads a path file containing two lines, and ignores the other file', async function () {
     let {stdout} = await runCli('check --path-file test/examples/file-list/files-to-decaffeinate.txt');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 3 files...');
     assertIncludes(stdout, 'All checks succeeded');
@@ -151,13 +180,13 @@ describe('file-list', () => {
 });
 
 describe('specifying individual files', () => {
-  it('allows specifying one file', async function() {
+  it('allows specifying one file', async function () {
     let {stdout} = await runCli('check --file test/examples/simple-success/A.coffee');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
     assertIncludes(stdout, 'All checks succeeded');
   });
 
-  it('allows specifying two files', async function() {
+  it('allows specifying two files', async function () {
     let {stdout} = await runCli(
       `check --file test/examples/simple-success/A.coffee \
         --file test/examples/simple-success/B.coffee`);
@@ -167,8 +196,8 @@ describe('specifying individual files', () => {
 });
 
 describe('config files', () => {
-  it('reads the list of files from a config file', async function() {
-    await runWithTemplateDir('simple-config-file', async function() {
+  it('reads the list of files from a config file', async function () {
+    await runWithTemplateDir('simple-config-file', async function () {
       let {stdout, stderr} = await runCli('check');
       assert.equal(stderr, '');
       assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
@@ -178,10 +207,11 @@ describe('config files', () => {
 });
 
 describe('convert', () => {
-  it('generates git commits converting the files', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+  it('generates git commits converting the files', async function () {
+    await runWithTemplateDir('simple-success', async function () {
       await initGitRepo();
-      let {stdout} = await runCli('convert');
+      let {stdout, stderr} = await runCli('convert');
+      assert.equal(stderr, '');
       assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
@@ -195,10 +225,11 @@ Sample User <sample@example.com> Initial commit
     });
   });
 
-  it('generates a nice commit message when converting just one file', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+  it('generates a nice commit message when converting just one file', async function () {
+    await runWithTemplateDir('simple-success', async function () {
       await initGitRepo();
-      let {stdout} = await runCli('convert --file ./A.coffee');
+      let {stdout, stderr} = await runCli('convert --file ./A.coffee');
+      assert.equal(stderr, '');
       assertIncludes(stdout, 'Successfully ran decaffeinate');
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
@@ -211,7 +242,7 @@ Sample User <sample@example.com> Initial commit
       );
     });
 
-    it('generates a nice commit message when converting three files', async function() {
+    it('generates a nice commit message when converting three files', async function () {
       await runWithTemplateDir('file-list', async function () {
         await initGitRepo();
         let {stdout} = await runCli('convert --path-file ./files-to-decaffeinate.txt');
@@ -229,8 +260,8 @@ Sample User <sample@example.com> Initial commit
     });
   });
 
-  it('runs jscodeshift', async function() {
-    await runWithTemplateDir('jscodeshift-test', async function() {
+  it('runs jscodeshift', async function () {
+    await runWithTemplateDir('jscodeshift-test', async function () {
       await initGitRepo();
       let {stdout} = await runCli('convert');
       assertIncludes(stdout, 'Successfully ran decaffeinate');
@@ -247,8 +278,8 @@ let notChanged = 4;
     });
   });
 
-  it('runs built-in jscodeshift scripts', async function() {
-    await runWithTemplateDir('builtin-jscodeshift-script', async function() {
+  it('runs built-in jscodeshift scripts', async function () {
+    await runWithTemplateDir('builtin-jscodeshift-script', async function () {
       await initGitRepo();
       let {stdout, stderr} = await runCli('convert');
       assert.equal(stderr, '');
@@ -268,7 +299,7 @@ function f() {
     });
   });
 
-  it('prepends "eslint-env mocha" when specified', async function() {
+  it('prepends "eslint-env mocha" when specified', async function () {
     await runWithTemplateDir('mocha-env-test', async function () {
       await initGitRepo();
       let {stdout} = await runCli('convert');
@@ -289,8 +320,8 @@ console.log('This is test code');
     });
   });
 
-  it('runs eslint, applying fixes and disabling existing issues', async function() {
-    await runWithTemplateDir('eslint-fix-test', async function() {
+  it('runs eslint, applying fixes and disabling existing issues', async function () {
+    await runWithTemplateDir('eslint-fix-test', async function () {
       await initGitRepo();
       let {stdout} = await runCli('convert');
       assertIncludes(stdout, 'Successfully ran decaffeinate');
@@ -309,16 +340,16 @@ console.log(x);
     });
   });
 
-  it('fails when .coffee and .js files both exist', async function() {
-    await runWithTemplateDir('existing-js-file', async function() {
+  it('fails when .coffee and .js files both exist', async function () {
+    await runWithTemplateDir('existing-js-file', async function () {
       await initGitRepo();
       let {stderr} = await runCli('convert');
       assertIncludes(stderr, 'The file A.js already exists.');
     });
   });
 
-  it('fails when the git worktree has changes', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+  it('fails when the git worktree has changes', async function () {
+    await runWithTemplateDir('simple-success', async function () {
       await initGitRepo();
       await exec('echo "x = 2" >> A.coffee');
       let {stderr} = await runCli('convert');
@@ -329,8 +360,8 @@ console.log(x);
     });
   });
 
-  it('generates backup files that are removed by clean', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+  it('generates backup files that are removed by clean', async function () {
+    await runWithTemplateDir('simple-success', async function () {
       await initGitRepo();
       await runCli('convert');
       assert(
@@ -345,8 +376,8 @@ console.log(x);
     });
   });
 
-  it('handles a missing eslint config', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+  it('handles a missing eslint config', async function () {
+    await runWithTemplateDir('simple-success', async function () {
       await initGitRepo();
       let cliResult;
       try {
@@ -360,8 +391,8 @@ console.log(x);
     });
   });
 
-  it('bypasses git commit hooks', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+  it('bypasses git commit hooks', async function () {
+    await runWithTemplateDir('simple-success', async function () {
       await initGitRepo();
       await writeFile('.git/hooks/commit-msg', '#!/bin/sh\nexit 1');
       await exec('chmod +x .git/hooks/commit-msg');
@@ -374,7 +405,7 @@ console.log(x);
 });
 
 describe('fix-imports', () => {
-  async function runFixImportsTest(dirName) {
+  async function runFixImportsTest (dirName) {
     await runWithTemplateDir(dirName, async function () {
       // We intentionally call the files ".js.expected" so that jscodeshift
       // doesn't discover and try to convert them.
@@ -394,39 +425,39 @@ describe('fix-imports', () => {
     });
   }
 
-  it('handles absolute imports', async function() {
+  it('handles absolute imports', async function () {
     await runFixImportsTest('fix-imports-absolute-imports');
   });
 
-  it('converts a default import to import * when necessary', async function() {
+  it('converts a default import to import * when necessary', async function () {
     await runFixImportsTest('fix-imports-default-import-to-import-star');
   });
 
-  it('properly fixes import statements in pre-existing JS files', async function() {
+  it('properly fixes import statements in pre-existing JS files', async function () {
     await runFixImportsTest('fix-imports-import-from-existing-js');
   });
 
-  it('converts named imports to destructure statements when necessary', async function() {
+  it('converts named imports to destructure statements when necessary', async function () {
     await runFixImportsTest('fix-imports-named-import-to-destructure');
   });
 
-  it('properly handles existing JS code using import *', async function() {
+  it('properly handles existing JS code using import *', async function () {
     await runFixImportsTest('fix-imports-star-import-from-existing-js');
   });
 
-  it('properly destructures from import * if necessary', async function() {
+  it('properly destructures from import * if necessary', async function () {
     await runFixImportsTest('fix-imports-destructure-from-import-star');
   });
 
-  it('properly reads exports when "export function" is used', async function() {
+  it('properly reads exports when "export function" is used', async function () {
     await runFixImportsTest('fix-imports-export-function');
   });
 
-  it('uses an import * import when necessary even when there are no name usages', async function() {
+  it('uses an import * import when necessary even when there are no name usages', async function () {
     await runFixImportsTest('fix-imports-no-name-usages');
   });
 
-  it('only does relative path resolution when an import is relative style', async function() {
+  it('only does relative path resolution when an import is relative style', async function () {
     await runFixImportsTest('fix-imports-non-relative-path');
   });
 });

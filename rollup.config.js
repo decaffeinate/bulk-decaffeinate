@@ -16,6 +16,7 @@ export default {
     babel(babelrc())
   ],
   external: external,
+  intro: 'require(\'babel-polyfill\');',
   sourceMap: true,
   targets: [
     {

@@ -1,16 +1,16 @@
-import 'babel-polyfill';
-import commander from 'commander';
+import { Command } from 'commander';
 
 import check from './check';
 import clean from './clean';
 import resolveConfig from './config/resolveConfig';
 import convert from './convert';
+import land from './land';
 import CLIError from './util/CLIError';
 import viewErrors from './viewErrors';
 
-export default function () {
+async function argParse (argv) {
   let command = null;
-  commander
+  let parser = new Command()
     .arguments('<command>')
     .description(`Run decaffeinate on a set of files.
 
@@ -22,11 +22,13 @@ export default function () {
                             for the transition.
     view-errors: Open failures from the most recent run in an online repl.
     clean: Delete all files ending with .original.coffee in the current
+                            working directory or any of its subdirectories.
+    land: Create a merge commit with al
                             working directory or any of its subdirectories.`)
     .action(commandArg => command = commandArg)
     .option('-f, --file [path]',
       `An absolute or relative path to decaffeinate. This arg may be specified 
-                            multiple times.`, (arg, args) => {args.push(arg); return args;}, [])
+                            multiple times.`, (arg, args) => args.concat([arg]), [])
     .option('-p, --path-file [path]',
       `A file containing the paths of .coffee files to decaffeinate, one
                             path per line. Paths can be either absolute or relative to the
@@ -42,28 +44,40 @@ export default function () {
                             automatically discovered from node_modules and then from the PATH.`)
     .option('--eslint-path [path]',
       `The path to the eslint binary. If none is specified, it will be
-                            automatically discovered from node_modules and then from the PATH.`)
-    .parse(process.argv);
-
-  runCommand(command);
+                            automatically discovered from node_modules and then from the PATH.`);
+  parser.parse(argv);
+  return [command, parser];
 }
 
-async function runCommand(command) {
+async function runCommand (command, parser) {
+  let cmd;
+  if (command === 'check') {
+    cmd = check;
+  } else if (command === 'convert') {
+    cmd = convert;
+  } else if (command === 'view-errors') {
+    cmd = viewErrors;
+  } else if (command === 'clean') {
+    cmd = clean;
+  } else if (command === 'land') {
+    cmd = land;
+  } else {
+    console.log(await (parser.helpInformation()));
+    return;
+  }
   try {
-    if (command === 'check') {
-      let config = await resolveConfig(commander);
-      await check(config);
-    } else if (command === 'convert') {
-      let config = await resolveConfig(commander);
-      await convert(config);
-    } else if (command === 'view-errors') {
-      await viewErrors();
-    } else if (command === 'clean') {
-      await clean();
-    } else {
-      commander.outputHelp();
-    }
+    let config = await resolveConfig(parser);
+    await cmd(config);
   } catch (e) {
     console.error(CLIError.formatError(e));
   }
 }
+
+async function cli () {
+  let [command, config] = await argParse(process.argv);
+  runCommand(command, config);
+}
+cli.runCommand = runCommand;
+cli.argParse = argParse;
+
+export default cli;
