@@ -1,9 +1,10 @@
 /* eslint-env mocha */
 import assert from 'assert';
 import { exec } from 'mz/child_process';
-import { exists, readFile, writeFile, mkdtemp, mkdir } from 'mz/fs';
+import { exists, readFile, writeFile, mkdtemp, mkdir, rename } from 'mz/fs';
 import { join, sep, normalize, resolve } from 'path';
 
+import gitTrackedStatus from '../../src/util/gitTrackedStatus';
 import getFilesUnderPath from '../../src/util/getFilesUnderPath';
 import cli from '../../src/cli';
 const {runCommand, argParse} = cli;
@@ -13,12 +14,13 @@ const originalCwd = resolve(join(__dirname, '..', '..'));
 Error.stackTraceLimit = 1000;
 
 class MockStream {
- constructor() {
-   this.str = '';
- }
- write(str) {
-   this.str += str;
- }
+  constructor () {
+    this.str = '';
+  }
+
+  write (str) {
+    this.str += str;
+  }
 }
 
 /**
@@ -50,14 +52,14 @@ async function runCli (args) {
     ...args.split(' '),
   ];
   let [command, config] = await argParse(argv);
-  let oldConsole = global.console;
+  global.oldConsole = global.oldConsole || global.console;
   let strm1 = new MockStream();
   let strm2 = new MockStream();
-  Object.defineProperty(global, 'console', {value: new console.Console(strm1, strm2)});
   try {
+    Object.defineProperty(global, 'console', {value: new global.oldConsole.Console(strm1, strm2)});
     await runCommand(command, config);
   } finally {
-    Object.defineProperty(global, 'console', {value: oldConsole});
+    Object.defineProperty(global, 'console', {value: global.oldConsole});
   }
   let [stdout, stderr] = [strm1.str, strm2.str];
   return {stdout, stderr};
@@ -381,10 +383,10 @@ console.log(x);
       await initGitRepo();
       let cliResult;
       try {
-        await exec('mv ../../../.eslintrc ../../../.eslintrc.backup');
+        await rename(join(__dirname, '../../.eslintrc'), join(__dirname, '../../.eslintrc.backup'));
         cliResult = await runCli('convert');
       } finally {
-        await exec('mv ../../../.eslintrc.backup ../../../.eslintrc');
+        await rename(join(__dirname, '../../.eslintrc.backup'), join(__dirname, '../../.eslintrc'));
       }
       assert.equal(cliResult.stderr, '');
       assertIncludes(cliResult.stdout, 'because there was no eslint config file');
@@ -394,8 +396,12 @@ console.log(x);
   it('bypasses git commit hooks', async function () {
     await runWithTemplateDir('simple-success', async function () {
       await initGitRepo();
-      await writeFile('.git/hooks/commit-msg', '#!/bin/sh\nexit 1');
-      await exec('chmod +x .git/hooks/commit-msg');
+      if (process.platform === 'win32') {
+        await writeFile('.git/hooks/commit-msg.bat', 'exit 1');
+      } else {
+        await writeFile('.git/hooks/commit-msg', '#!/bin/sh\nexit 1');
+        await exec('chmod +x .git/hooks/commit-msg');
+      }
       let {stdout, stderr} = await runCli('convert');
       assert.equal(stderr, '');
       assertIncludes(stdout, 'Successfully ran decaffeinate');
@@ -459,5 +465,12 @@ describe('fix-imports', () => {
 
   it('only does relative path resolution when an import is relative style', async function () {
     await runFixImportsTest('fix-imports-non-relative-path');
+  });
+});
+
+describe('test git stuff', function () {
+  it('should get status', async function () {
+    let x = await gitTrackedStatus();
+    console.log(x);
   });
 });

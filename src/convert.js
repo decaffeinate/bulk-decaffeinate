@@ -1,14 +1,16 @@
 import { exec } from 'mz/child_process';
-import { readFile, writeFile } from 'mz/fs';
+import { rename, readFile, unlink, writeFile } from 'mz/fs';
 import path from 'path';
 
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
 import execLive from './util/execLive';
+import makeCommit from './util/makeCommit';
 import pluralize from './util/pluralize';
+import gitTrackedStatus from './util/gitTrackedStatus';
 
-export default async function convert(config) {
+export default async function convert (config) {
   await assertGitWorktreeClean();
 
   let coffeeFiles = config.filesToProcess;
@@ -23,30 +25,41 @@ Some files could not be convered with decaffeinate.
 Re-run with the "check" command for more details.`);
   }
 
-  async function runCommand(description, commandByPath, {runInSeries}={}) {
+  async function runAsync (description, asyncFn) {
     await runWithProgressBar(
-      description, baseFiles, makeCLIFn(commandByPath), {runInSeries});
+      description, baseFiles, async function (path) {
+        await asyncFn(path);
+        return {path};
+      });
   }
 
-  await runCommand(
+  await runAsync(
     'Backing up files to .original.coffee...',
-    p => `cp ${p}.coffee ${p}.original.coffee`);
+    async function (basePath) {
+      readFile(`${basePath}.coffee`).then(buf => writeFile(`${basePath}.original.coffee`, buf));
+    });
 
-  await runCommand(
-    'Renaming files from .coffee to .js in git...',
-    p => `git mv ${p}.coffee ${p}.js`,
-    {runInSeries: true});
+  await runAsync(
+    'Renaming files from .coffee to .js...',
+    async function (basePath) {
+      await rename(`${basePath}.coffee`, `${basePath}.js`);
+    });
 
-  let gitAuthor = await getGitAuthor();
   let shortDescription = getShortDescription(baseFiles);
   let renameCommitMsg =
     `decaffeinate: Rename ${shortDescription} from .coffee to .js`;
   console.log(`Generating the first commit: "${renameCommitMsg}"...`);
-  await commit(renameCommitMsg, gitAuthor);
+  await makeCommit(async function (repo, resolvePath) {
+    let files = baseFiles.map(p => resolvePath(`${p}.js`));
+    let p = new Promise((res, rej) => repo.add(files, err => err ? rej(err) : res(files)));
+    return await p;
+  }, renameCommitMsg, 'decaffeinate');
 
-  await runCommand(
+  await runAsync(
     'Moving files back...',
-    p => `mv ${p}.js ${p}.coffee`);
+    async function (basePath) {
+      await rename(`${basePath}.js`, `${basePath}.coffee`);
+    });
 
   await runWithProgressBar(
     'Running decaffeinate on all files...',
@@ -54,19 +67,20 @@ Re-run with the "check" command for more details.`);
     makeCLIFn(path => `${config.decaffeinatePath} ${path}`)
   );
 
-  await runCommand(
-    'Running rm on old files...',
-    p => `rm ${p}.coffee`);
-
-  await runCommand(
-    'Running git add on new files...',
-    p => `git add ${p}.js`,
-    {runInSeries: true});
+  await runAsync(
+    'Deleting old files...',
+    async function (basePath) {
+      await unlink(`${basePath}.coffee`);
+    });
 
   let decaffeinateCommitMsg =
     `decaffeinate: Convert ${shortDescription} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
-  await commit(decaffeinateCommitMsg, gitAuthor);
+  await makeCommit(async function (repo, resolvePath) {
+    let files = baseFiles.map(p => resolvePath(`${p}.js`));
+    let p = new Promise((res, rej) => repo.add(files, err => err ? rej(err) : res(files)));
+    return await p;
+  }, decaffeinateCommitMsg, 'decaffeinate');
 
   let jsFiles = baseFiles.map(f => `${f}.js`);
 
@@ -82,7 +96,7 @@ Re-run with the "check" command for more details.`);
     let regex = new RegExp(config.mochaEnvFilePattern);
     let testFiles = jsFiles.filter(f => regex.test(f));
     await runWithProgressBar(
-      'Adding /* eslint-env mocha */ to test files...', testFiles, async function(path) {
+      'Adding /* eslint-env mocha */ to test files...', testFiles, async function (path) {
         await prependToFile(path, '/* eslint-env mocha */\n');
         return {error: null};
       });
@@ -113,31 +127,36 @@ Re-run with the "check" command for more details.`);
     }
   }
 
-  console.log(`Running git add for all files with changes...`);
-  await exec(`git add -u`);
-
   let postProcessCommitMsg =
     `decaffeinate: Run post-processing cleanups on ${shortDescription}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
-  await commit(postProcessCommitMsg, gitAuthor);
+  await makeCommit(async function (repo, resolvePath) {
+    // Add unchanged files and also make sure any baseFiles are added. Otherwise
+    // we can sometimes run into a weird race condition where the last files to
+    // go through eslint --fix don't get added.
+    let changedFiles = (await gitTrackedStatus()).map(f => f.path);
+    let files = changedFiles.concat(baseFiles.map(p => resolvePath(`${p}.js`)));
+    let p = new Promise((res, rej) => repo.add(files, err => err ? rej(err) : res(files)));
+    return await p;
+  }, postProcessCommitMsg, 'decaffeinate');
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
   console.log('You should now fix lint issues in any affected files.');
   console.log('All CoffeeScript files were backed up as .original.coffee files that you can use for comparison.');
   console.log('You can run "bulk-decaffeinate clean" to remove those files.');
   console.log('To allow git to properly track file history, you should NOT squash the generated commits together.');
-}
+};
 
-async function assertGitWorktreeClean() {
-  let stdout = (await exec('git status --short --untracked-files=no'))[0];
-  if (stdout.length) {
+async function assertGitWorktreeClean () {
+  let changedFiles = await gitTrackedStatus();
+  if (changedFiles.length) {
     throw new CLIError(`\
 You have modifications to your git worktree.
 Please revert or commit them before running convert.`);
   }
 }
 
-function getBaseFiles(coffeeFiles) {
+function getBaseFiles (coffeeFiles) {
   return coffeeFiles.map(coffeeFile => {
     if (!coffeeFile.endsWith('.coffee')) {
       throw new CLIError(`The non-CoffeeScript file ${coffeeFile} was specified.`);
@@ -146,16 +165,7 @@ function getBaseFiles(coffeeFiles) {
   });
 }
 
-async function getGitAuthor() {
-  let userEmail = (await exec('git config user.email'))[0];
-  return `decaffeinate <${userEmail}>`;
-}
-
-async function commit(message, author) {
-  await exec(`git commit -m "${message}" --author "${author}" --no-verify`);
-}
-
-function getShortDescription(baseFiles) {
+function getShortDescription (baseFiles) {
   let firstFile = `${path.basename(baseFiles[0])}.coffee`;
   if (baseFiles.length === 1) {
     return firstFile;
@@ -164,26 +174,29 @@ function getShortDescription(baseFiles) {
   }
 }
 
-function resolveJscodeshiftScriptPath(scriptPath) {
+function resolveJscodeshiftScriptPath (scriptPath) {
   if (['prefer-function-declarations.js'].includes(scriptPath)) {
     return path.join(__dirname, `../jscodeshift-scripts-dist/${scriptPath}`);
   }
   return scriptPath;
 }
 
-function makeEslintFixFn(config) {
-  return async function runEslint(path) {
+function makeEslintFixFn (config) {
+  return async function runEslint (path) {
     let messages = [];
 
     // Ignore the eslint exit code; it gives useful stdout in the same format
     // regardless of the exit code. Also keep a 10MB buffer since sometimes
     // there can be a LOT of lint failures.
-    let eslintOutputStr = (await exec(
-      `${config.eslintPath} --fix --format json ${path}.js; :`,
-      {maxBuffer: 10000*1024}))[0];
+    let eslintOutputStr = await new Promise(res =>
+      exec(`${config.eslintPath} --fix --format json ${path}.js`, {maxBuffer: 10000 * 1024}, (error, stdout, stderr) => {
+        if (stdout.length) return res(stdout);
+        else return res(stderr);
+      })
+    );
 
     let ruleIds;
-    if (eslintOutputStr.includes("ESLint couldn't find a configuration file")) {
+    if (eslintOutputStr.includes('ESLint couldn\'t find a configuration file')) {
       messages.push(`Skipping "eslint --fix" on ${path}.js because there was no eslint config file.`);
       ruleIds = [];
     } else {
@@ -215,7 +228,7 @@ ${ruleIds.map(ruleId => `    ${ruleId},`).join('\n')}
   };
 }
 
-async function prependToFile(path, prependText) {
+async function prependToFile (path, prependText) {
   let contents = await readFile(path);
   contents = prependText + contents;
   await writeFile(path, contents);
