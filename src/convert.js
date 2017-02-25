@@ -140,6 +140,14 @@ Re-run with the "check" command for more details.`);
     }
   }
 
+  if (config.codePrefix) {
+    await runWithProgressBar(
+      'Adding code prefix to converted files...', baseFiles, async function(path) {
+        await prependToFile(path + '.js', config.codePrefix);
+        return {error: null};
+      });
+  }
+
   let postProcessCommitMsg =
     `decaffeinate: Run post-processing cleanups on ${shortDescription}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
