@@ -38,6 +38,7 @@ export default async function resolveConfig(commander, requireValidFiles = true)
     jscodeshiftScripts: config.jscodeshiftScripts,
     landConfig: config.landConfig,
     mochaEnvFilePattern: config.mochaEnvFilePattern,
+    codePrefix: config.codePrefix,
     landBase: config.landBase,
     skipVerify: config.skipVerify,
     decaffeinatePath: await resolveDecaffeinatePath(config),

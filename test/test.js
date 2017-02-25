@@ -290,6 +290,20 @@ console.log('This is test code');
     });
   });
 
+  it('prepends a custom prefix specified', async function() {
+    await runWithTemplateDir('code-prefix-test', async function () {
+      await initGitRepo();
+      await runCliExpectSuccess('convert');
+      await assertFileContents('./A.js', `\
+/** @babel */
+// TODO: This file was created by bulk-decaffeinate.
+// Sanity-check the conversion and remove this comment.
+console.log('This is a file');
+`);
+    });
+  });
+
+
   it('respects decaffeinate args', async function() {
     await runWithTemplateDir('decaffeinate-args-test', async function () {
       await initGitRepo();
