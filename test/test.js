@@ -252,7 +252,7 @@ let notChanged = 4;
 */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-import a from './A';
+let a = require('./A');
 
 // This is a comment
 function f() {
@@ -266,6 +266,19 @@ function arrow() {
 function arrowWithComment() {
   // This is a comment
   return 5;
+}
+
+exports.a = 6;
+(function() {
+  return this.b = 7;
+})();
+(() => {
+  return exports.c = 8;
+})();
+class C {
+  d() {
+    return this.e = 9;
+  }
 }
 `);
     });

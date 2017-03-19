@@ -10,3 +10,12 @@ arrow = ->
 arrowWithComment = ->
   # This is a comment
   5
+
+@a = 6
+do ->
+  @b = 7
+do =>
+  @c = 8
+class C
+  d: ->
+    @e = 9

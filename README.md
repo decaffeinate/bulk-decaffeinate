@@ -183,6 +183,8 @@ more information.
     `function f() {}` when possible.
   * `remove-coffee-from-imports.js`: change `import` and `require` statements
     for .coffee files to no longer specify an extension.
+  * `top-level-this-to-exports.js`: change `this` at the top level to `exports`,
+    so the code can run in babel and node.
 * `fixImportsConfig`: an optional object. If present, a whole-codebase pass will
   be done to fix any incorrect imports involving the converted files. It should
   be an object with up to two fields:
