@@ -8,7 +8,6 @@ export default function transformer(file, api) {
   return j(file.source)
     .find(j.ThisExpression)
     .forEach(path => {
-      console.log(j.types);
       if (isAtTopLevel(path)) {
         j(path).replaceWith(
           j.identifier('exports')
