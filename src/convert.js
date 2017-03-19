@@ -91,7 +91,8 @@ Re-run with the "check" command for more details.`);
     for (let scriptPath of config.jscodeshiftScripts) {
       let resolvedPath = resolveJscodeshiftScriptPath(scriptPath);
       console.log(`Running jscodeshift script ${resolvedPath}...`);
-      await execLive(`${config.jscodeshiftPath} -t ${resolvedPath} ${jsFiles.join(' ')}`);
+      await execLive(`${config.jscodeshiftPath} --parser flow \
+        -t ${resolvedPath} ${jsFiles.join(' ')}`);
     }
   }
 
@@ -127,8 +128,8 @@ Re-run with the "check" command for more details.`);
       thirdCommitModifiedFiles = eligibleFixImportsFiles;
       let encodedOptions = zlib.deflateSync(JSON.stringify(options)).toString('base64');
       await execLive(`\
-      ${config.jscodeshiftPath} -t ${scriptPath} ${eligibleRelativePaths.join(' ')}\
-        --encoded-options=${encodedOptions}`);
+      ${config.jscodeshiftPath} --parser flow -t ${scriptPath} \
+        ${eligibleRelativePaths.join(' ')} --encoded-options=${encodedOptions}`);
     }
   }
 

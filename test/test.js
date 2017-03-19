@@ -280,6 +280,8 @@ class C {
     return this.e = 9;
   }
 }
+
+return;
 `);
     });
   });

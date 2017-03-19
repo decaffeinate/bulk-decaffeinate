@@ -19,3 +19,5 @@ do =>
 class C
   d: ->
     @e = 9
+
+return
