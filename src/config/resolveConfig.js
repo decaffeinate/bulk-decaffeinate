@@ -25,7 +25,7 @@ export default async function resolveConfig(commander, requireValidFiles = true)
   for (let filename of currentDirFiles) {
     config = await applyPossibleConfig(filename, config);
   }
-  config = Object.assign(config, getCLIParamsConfig(commander));
+  config = getCLIParamsConfig(config, commander);
   let filesToProcess = await resolveFilesToProcess(config, requireValidFiles);
   filesToProcess = resolveFileFilter(filesToProcess, config);
   if (requireValidFiles) {
@@ -78,9 +78,8 @@ async function applyPossibleConfig(filename, config) {
 /**
  * Fill in a configuration from the CLI arguments.
  */
-function getCLIParamsConfig(commander) {
-  let {file, pathFile, dir, landBase, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
-  let config = {};
+function getCLIParamsConfig(config, commander) {
+  let {file, pathFile, dir, allowInvalidConstructors, landBase, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
   if (file && file.length > 0) {
     config.filesToProcess = file;
   }
@@ -89,6 +88,9 @@ function getCLIParamsConfig(commander) {
   }
   if (pathFile) {
     config.pathFile = pathFile;
+  }
+  if (allowInvalidConstructors) {
+    config.decaffeinateArgs = [...(config.decaffeinateArgs || []), '--allow-invalid-constructors'];
   }
   if (landBase) {
     config.landBase = landBase;

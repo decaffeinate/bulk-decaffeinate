@@ -414,6 +414,21 @@ console.log(x);
       assert.equal((await exec('git rev-list --count HEAD'))[0].trim(), '4');
     });
   });
+
+  it('allows invalid constructors when specified', async function() {
+    await runWithTemplateDir('invalid-subclass-constructor', async function() {
+      await initGitRepo();
+      await runCliExpectSuccess('convert --allow-invalid-constructors');
+    });
+  });
+
+  it('does not allow invalid constructors when not specified', async function() {
+    await runWithTemplateDir('invalid-subclass-constructor', async function() {
+      await initGitRepo();
+      let {stderr} = await runCli('convert');
+      assertIncludes(stderr, 'Some files could not be convered with decaffeinate');
+    });
+  });
 });
 
 describe('fix-imports', () => {

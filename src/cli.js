@@ -35,6 +35,9 @@ export default function () {
     .option('-d, --dir [path]',
       `A directory containing files to decaffeinate. All .coffee files in
                             any subdirectory of this directory are considered for decaffeinate.`)
+    .option('--allow-invalid-constructors',
+      `If specified, the --allow-invalid-constructors arg is added when
+                            invoking decaffeinate.`)
     .option('--land-base [revision]',
       `The git revision to use as the base commit when running the "land"
                             command. If none is specified, bulk-decaffeinate tries to use the
