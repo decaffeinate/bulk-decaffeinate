@@ -17,24 +17,25 @@ some follow-up cleanups. Here's an example of checking the Hubot repo:
 ...
 > cd hubot
 > bulk-decaffeinate check
-Discovering .coffee files in the current directory...
-Trying decaffeinate on 18 files using 4 workers...
-18/18 (7 failures so far)
-Done!
-
-7 files failed to convert:
-src/adapters/shell.coffee
+Doing a dry run of decaffeinate on 18 files...
+18/18 (5 failures so far)
+5 files failed to convert:
+src/adapter.coffee
 src/adapters/campfire.coffee
 src/brain.coffee
+src/listener.coffee
 src/message.coffee
-src/user.coffee
-src/robot.coffee
-test/brain_test.coffee
 
 Wrote decaffeinate-errors.log and decaffeinate-results.json with more detailed info.
-To open failures in the online repl, run "bulk-decaffeinate view-errors"
+To open failures in the online repl, run "bulk-decaffeinate view-errors".
+To convert the successful files, run "bulk-decaffeinate convert -p decaffeinate-successful-files.txt".
 > bulk-decaffeinate view-errors
 (7 browser tabs are opened, showing all failures.)
+> bulk-decaffeinate check --allow-invalid-constructors
+Doing a dry run of decaffeinate on 18 files...
+18/18
+All checks succeeded! decaffeinate can convert all 18 files.
+Run "bulk-decaffeinate convert" to convert the files to JavaScript.
 ```
 
 Once any failures are resolved (generally by tweaking the CoffeeScript to work
