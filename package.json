@@ -61,6 +61,7 @@
     "mz": "^2.4.0",
     "nodegit": "^0.16.0",
     "opn": "^4.0.2",
-    "require-uncached": "^1.0.2"
+    "require-uncached": "^1.0.2",
+    "simple-git": "^1.70.0"
   }
 }
