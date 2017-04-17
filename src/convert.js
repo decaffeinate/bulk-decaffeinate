@@ -8,7 +8,7 @@ import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
 import execLive from './util/execLive';
 import getFilesUnderPath from './util/getFilesUnderPath';
-import gitTrackedStatus from './util/gitTrackedStatus';
+import isWorktreeEmpty from './util/isWorktreeEmpty';
 import makeCommit from './util/makeCommit';
 import pluralize from './util/pluralize';
 
@@ -164,8 +164,7 @@ Re-run with the "check" command for more details.`);
 }
 
 async function assertGitWorktreeClean() {
-  let changedFiles = await gitTrackedStatus();
-  if (changedFiles.length) {
+  if (!await isWorktreeEmpty()) {
     throw new CLIError(`\
 You have modifications to your git worktree.
 Please revert or commit them before running convert.`);
