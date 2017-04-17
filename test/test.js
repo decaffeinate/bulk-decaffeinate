@@ -18,6 +18,15 @@ async function runCli(args) {
   return {stdout, stderr};
 }
 
+async function runCliExpectError(args) {
+  try {
+    await runCli(args);
+    throw new Error('Expected the CLI to fail.');
+  } catch (e) {
+    return e.message;
+  }
+}
+
 function assertIncludes(output, substr) {
   assert(
     output.includes(substr),
@@ -357,8 +366,8 @@ console.log(x);
   it('fails when .coffee and .js files both exist', async function() {
     await runWithTemplateDir('existing-js-file', async function() {
       await initGitRepo();
-      let {stderr} = await runCli('convert');
-      assertIncludes(stderr, 'The file A.js already exists.');
+      let message = await runCliExpectError('convert');
+      assertIncludes(message, 'The file A.js already exists.');
     });
   });
 
@@ -366,11 +375,11 @@ console.log(x);
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
       await exec('echo "x = 2" >> A.coffee');
-      let {stderr} = await runCli('convert');
-      assertIncludes(stderr, 'You have modifications to your git worktree.');
+      let message = await runCliExpectError('convert');
+      assertIncludes(message, 'You have modifications to your git worktree.');
       await exec('git add A.coffee');
-      ({stderr} = await runCli('convert'));
-      assertIncludes(stderr, 'You have modifications to your git worktree.');
+      message = await runCliExpectError('convert');
+      assertIncludes(message, 'You have modifications to your git worktree.');
     });
   });
 
@@ -425,8 +434,8 @@ console.log(x);
   it('does not allow invalid constructors when not specified', async function() {
     await runWithTemplateDir('invalid-subclass-constructor', async function() {
       await initGitRepo();
-      let {stderr} = await runCli('convert');
-      assertIncludes(stderr, 'Some files could not be convered with decaffeinate');
+      let message = await runCliExpectError('convert');
+      assertIncludes(message, 'Some files could not be convered with decaffeinate');
     });
   });
 });
