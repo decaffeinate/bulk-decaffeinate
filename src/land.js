@@ -1,5 +1,5 @@
 import { exec } from 'mz/child_process';
-import Git from 'nodegit';
+import git from 'simple-git/promise';
 
 import CLIError from './util/CLIError';
 
@@ -28,43 +28,42 @@ export default async function land(config) {
   }
   let remoteBranch = `${remote}/${upstreamBranch}`;
   console.log(`Running fetch for ${remote}.`);
-  let repo = await Git.Repository.openExt('.', 0, '');
+  await git().fetch([remote]);
 
-  await fetch(repo, remote);
-
-  let commits = await getCommits(repo, config);
+  let commits = await getCommits(config);
   console.log(`Found ${commits.length} commits to use.`);
 
-  let differentialRevisionLine = phabricatorAware ? getDifferentialRevisionLine(commits) : null;
+  let differentialRevisionLine = phabricatorAware ? await getDifferentialRevisionLine(commits) : null;
 
-  let remoteRef = await Git.Branch.lookup(repo, remoteBranch, Git.Branch.BRANCH.REMOTE);
-  await repo.checkoutRef(remoteRef);
+  await git().checkout(remoteBranch);
   for (let commit of commits) {
-    console.log(`Cherry-picking "${commit.message().split('\n', 1)[0]}"`);
-    await Git.Cherrypick.cherrypick(repo, commit, new Git.CherrypickOptions());
-    let index = await repo.refreshIndex();
-    if (index.hasConflicts()) {
+    console.log(`Cherry-picking "${commit.message}"`);
+    await git().raw(['cherry-pick', commit.hash]);
+    let status = await git().status();
+    if (status.conflicted.length > 0) {
       throw new CLIError(`\
 The cherry pick had conflicts.
 Please rebase your changes and retry "bulk-decaffeinate land"`);
     }
-    let message = commit.message();
+    let message = await getCommitMessage(commit.hash);
     if (phabricatorAware) {
       if (!message.includes('Differential Revision')) {
         message += `\n\n${differentialRevisionLine}`;
+        await git().commit(message, ['--amend']);
       }
     }
-    await repo.createCommitOnHead([], commit.author(), repo.defaultSignature(), message);
   }
 
   console.log(`Creating merge commit on ${remoteBranch}`);
-  let cherryPickHeadCommit = await repo.getHeadCommit();
-  await repo.checkoutRef(remoteRef);
+  let cherryPickHeadCommit = (await git().revparse(['HEAD'])).trim();
+  await git().checkout(remoteBranch);
+
   let mergeMessage = `Merge decaffeinate changes into ${remoteBranch}`;
   if (phabricatorAware) {
     mergeMessage += `\n\n${differentialRevisionLine}`;
   }
-  await createMergeCommit(repo, cherryPickHeadCommit, mergeMessage);
+  await git().mergeFromTo(cherryPickHeadCommit, 'HEAD', ['--no-ff']);
+  await git().commit(mergeMessage, ['--amend']);
   if (phabricatorAware) {
     console.log('Pulling commit message from Phabricator.');
     await exec('arc amend');
@@ -76,56 +75,49 @@ Please rebase your changes and retry "bulk-decaffeinate land"`);
   console.log('If you get a conflict, you should re-run "bulk-decaffeinate land".');
 }
 
-async function fetch(repo, remote) {
-  await repo.fetch(remote, {
-    callbacks: {
-      credentials(url, userName) {
-        return Git.Cred.sshKeyFromAgent(userName);
-      },
-    },
-  });
-}
-
-async function getCommits(repo, config) {
+async function getCommits(config) {
   let explicitBase = null;
   if (config.landBase) {
-    explicitBase = await Git.Revparse.single(repo, config.landBase);
+    explicitBase = (await git().revparse([config.landBase])).trim();
   }
 
-  let commit = await repo.getHeadCommit();
+  let allCommits;
+  try {
+    allCommits = (await git().log({from: 'HEAD', to: 'HEAD~20'})).all;
+  } catch (e) {
+    allCommits = (await git().log({from: 'HEAD'})).all;
+  }
+
   let commits = [];
-  let i;
   let hasSeenDecaffeinateCommit = false;
-  for (i = 0; i < 20; i++) {
-    let isDecaffeinateCommit = commit.author().name() === 'decaffeinate';
+
+  for (let commit of allCommits) {
+    let isDecaffeinateCommit = commit.author_name === 'decaffeinate';
     if (explicitBase !== null) {
-      if (explicitBase.id().cmp(commit.id()) === 0) {
-        break;
+      if (explicitBase === commit.hash) {
+        return commits;
       }
     } else {
       if (hasSeenDecaffeinateCommit && !isDecaffeinateCommit) {
-        break;
+        return commits;
       }
     }
     if (!hasSeenDecaffeinateCommit && isDecaffeinateCommit) {
       hasSeenDecaffeinateCommit = true;
     }
     commits.unshift(commit);
-    commit = await commit.parent(0);
   }
-  if (i >= 20) {
-    throw new CLIError(`\
+  throw new CLIError(`\
 Searched 20 commits without finding a set of commits to use. Make sure you have
 commits with the "decaffeinate" author in your recent git history, and that the
 first of those commits is the first commit that you would like to land.`);
-  }
-  return commits;
 }
 
-function getDifferentialRevisionLine(commits) {
+async function getDifferentialRevisionLine(commits) {
   let resultLine = null;
   for (let commit of commits) {
-    for (let line of commit.message().split('\n')) {
+    let commitMessage = await getCommitMessage(commit.hash);
+    for (let line of commitMessage.split('\n')) {
       if (line.startsWith('Differential Revision')) {
         if (resultLine === null || resultLine === line) {
           resultLine = line;
@@ -144,24 +136,6 @@ Expected to find a "Differential Revision" line in at least one commit.`);
   return resultLine;
 }
 
-async function createMergeCommit(repo, otherCommit, mergeMessage) {
-  let annotatedCommit = await Git.AnnotatedCommit.lookup(repo, otherCommit.id());
-  await Git.Merge.merge(repo, annotatedCommit, null, {
-    checkoutStrategy: Git.Checkout.STRATEGY.FORCE,
-  });
-  let index = await repo.refreshIndex();
-  if (index.hasConflicts()) {
-    throw new CLIError('Unexpected conflict when creating merge commit.');
-  }
-  await index.write();
-  let treeOid = await index.writeTree();
-  await repo.createCommit(
-    'HEAD',
-    repo.defaultSignature(),
-    repo.defaultSignature(),
-    mergeMessage,
-    treeOid,
-    [await repo.getHeadCommit(), otherCommit]
-  );
-  repo.stateCleanup();
+async function getCommitMessage(commitHash) {
+  return await git().show(['-s', '--format=%B', commitHash]);
 }
