@@ -76,6 +76,7 @@ async function runCommand(command) {
       commander.outputHelp();
     }
   } catch (e) {
+    process.exitCode = 1;
     console.error(CLIError.formatError(e));
   }
 }
