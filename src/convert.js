@@ -1,6 +1,7 @@
 import { exec } from 'mz/child_process';
 import { copy, move, readFile, unlink, writeFile } from 'fs-promise';
 import path from 'path';
+import git from 'simple-git/promise';
 import zlib from 'zlib';
 
 import makeCLIFn from './runner/makeCLIFn';
@@ -55,10 +56,9 @@ Re-run with the "check" command for more details.`);
   let renameCommitMsg =
     `decaffeinate: Rename ${shortDescription} from .coffee to .js`;
   console.log(`Generating the first commit: "${renameCommitMsg}"...`);
-  await makeCommit(async function(index, resolvePath) {
-    await index.removeAll(baseFiles.map(p => resolvePath(`${p}.coffee`)), null, null);
-    await index.addAll(baseFiles.map(p => resolvePath(`${p}.js`)), 0, null, null);
-  }, renameCommitMsg, 'decaffeinate');
+  await git().rm(baseFiles.map(p => `${p}.coffee`));
+  await git().add(baseFiles.map(p => `${p}.js`));
+  await makeCommit(renameCommitMsg);
 
   await runAsync(
     'Moving files back...',
@@ -81,11 +81,9 @@ Re-run with the "check" command for more details.`);
   let decaffeinateCommitMsg =
     `decaffeinate: Convert ${shortDescription} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
-  await makeCommit(async function(index, resolvePath) {
-    await index.addAll(baseFiles.map(p => resolvePath(`${p}.js`)), 0, null, null);
-  }, decaffeinateCommitMsg, 'decaffeinate');
-
   let jsFiles = baseFiles.map(f => `${f}.js`);
+  await git().add(jsFiles);
+  await makeCommit(decaffeinateCommitMsg);
 
   if (config.jscodeshiftScripts) {
     for (let scriptPath of config.jscodeshiftScripts) {
@@ -152,9 +150,8 @@ Re-run with the "check" command for more details.`);
   let postProcessCommitMsg =
     `decaffeinate: Run post-processing cleanups on ${shortDescription}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
-  await makeCommit(async function(index, resolvePath) {
-    await index.addAll(thirdCommitModifiedFiles.map(resolvePath), 0, null, null);
-  }, postProcessCommitMsg, 'decaffeinate');
+  await git().add(thirdCommitModifiedFiles);
+  await makeCommit(postProcessCommitMsg);
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
   console.log('You should now fix lint issues in any affected files.');
