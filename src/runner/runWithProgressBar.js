@@ -1,4 +1,5 @@
 import runInParallel from './runInParallel';
+import CLIError from '../util/CLIError';
 import pluralize from '../util/pluralize';
 
 const NUM_CONCURRENT_PROCESSES = 8;
@@ -11,7 +12,7 @@ const NUM_CONCURRENT_PROCESSES = 8;
  * any other fields.
  */
 export default async function runWithProgressBar(
-    description, files, asyncFn, {runInSeries}={}) {
+    description, files, asyncFn, {runInSeries, allowFailures}={}) {
   let numProcessed = 0;
   let numFailures = 0;
   let numTotal = files.length;
@@ -19,6 +20,9 @@ export default async function runWithProgressBar(
   let numConcurrentProcesses = runInSeries ? 1 : NUM_CONCURRENT_PROCESSES;
   let results = await runInParallel(files, asyncFn, numConcurrentProcesses, ({result}) => {
     if (result.error) {
+      if (!allowFailures) {
+        throw new CLIError(`Error:\n${result.error}`);
+      }
       numFailures++;
     }
     numProcessed++;

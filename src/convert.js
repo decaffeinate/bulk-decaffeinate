@@ -21,11 +21,12 @@ export default async function convert(config) {
   let {decaffeinateArgs = [], decaffeinatePath} = config;
 
   if (!config.skipVerify) {
-    let decaffeinateResults = await runWithProgressBar(
-      'Verifying that decaffeinate can successfully convert these files...',
-      coffeeFiles, makeCLIFn(path =>
-        `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`));
-    if (decaffeinateResults.filter(r => r.error !== null).length > 0) {
+    try {
+      await runWithProgressBar(
+        'Verifying that decaffeinate can successfully convert these files...',
+        coffeeFiles, makeCLIFn(path =>
+          `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`));
+    } catch (e) {
       throw new CLIError(`\
 Some files could not be convered with decaffeinate.
 Re-run with the "check" command for more details.`);
