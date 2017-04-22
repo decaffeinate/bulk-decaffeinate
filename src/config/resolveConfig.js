@@ -79,7 +79,17 @@ async function applyPossibleConfig(filename, config) {
  * Fill in a configuration from the CLI arguments.
  */
 function getCLIParamsConfig(config, commander) {
-  let {file, pathFile, dir, allowInvalidConstructors, landBase, decaffeinatePath, jscodeshiftPath, eslintPath} = commander;
+  let {
+    file,
+    pathFile,
+    dir,
+    allowInvalidConstructors,
+    landBase,
+    skipVerify,
+    decaffeinatePath,
+    jscodeshiftPath,
+    eslintPath,
+  } = commander;
   if (file && file.length > 0) {
     config.filesToProcess = file;
   }
@@ -94,6 +104,9 @@ function getCLIParamsConfig(config, commander) {
   }
   if (landBase) {
     config.landBase = landBase;
+  }
+  if (skipVerify) {
+    config.skipVerify = true;
   }
   if (decaffeinatePath) {
     config.decaffeinatePath = decaffeinatePath;
