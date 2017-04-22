@@ -42,6 +42,9 @@ export default function () {
       `The git revision to use as the base commit when running the "land"
                             command. If none is specified, bulk-decaffeinate tries to use the
                             first auto-generated commit in recent history.`)
+    .option('--skip-verify',
+      `If specified, skips the initial verification step when running the
+                            "convert" command.`)
     .option('--decaffeinate-path [path]',
       `The path to the decaffeinate binary. If none is specified, it will
                             be automatically discovered from node_modules and then from the
