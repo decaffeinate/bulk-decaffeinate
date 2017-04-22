@@ -8,7 +8,9 @@ export default async function check(config) {
   let {filesToProcess, decaffeinateArgs = [], decaffeinatePath} = config;
   let decaffeinateResults = await runWithProgressBar(
     `Doing a dry run of decaffeinate on ${pluralize(filesToProcess.length, 'file')}...`,
-    filesToProcess, makeCLIFn(path => `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`));
+    filesToProcess,
+    makeCLIFn(path => `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`),
+    {allowFailures: true});
   await printResults(decaffeinateResults);
 }
 
