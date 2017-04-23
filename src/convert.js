@@ -238,7 +238,12 @@ function makeEslintFixFn(config) {
       messages.push(`Skipping "eslint --fix" on ${path}.js because there was no eslint config file.`);
       ruleIds = [];
     } else {
-      let eslintOutput = JSON.parse(eslintOutputStr);
+      let eslintOutput;
+      try {
+        eslintOutput = JSON.parse(eslintOutputStr);
+      } catch (e) {
+        throw new CLIError(`Error while running eslint:\n${eslintOutputStr}`);
+      }
       ruleIds = eslintOutput[0].messages
         .map(message => message.ruleId).filter(ruleId => ruleId);
       ruleIds = Array.from(new Set(ruleIds)).sort();
