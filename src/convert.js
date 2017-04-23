@@ -58,7 +58,7 @@ Re-run with the "check" command for more details.`);
     `decaffeinate: Rename ${shortDescription} from .coffee to .js`;
   console.log(`Generating the first commit: "${renameCommitMsg}"...`);
   await git().rm(baseFiles.map(p => `${p}.coffee`));
-  await git().add(baseFiles.map(p => `${p}.js`));
+  await git().raw(['add', '-f', ...baseFiles.map(p => `${p}.js`)]);
   await makeCommit(renameCommitMsg);
 
   await runAsync(
@@ -83,7 +83,7 @@ Re-run with the "check" command for more details.`);
     `decaffeinate: Convert ${shortDescription} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
   let jsFiles = baseFiles.map(f => `${f}.js`);
-  await git().add(jsFiles);
+  await git().raw(['add', '-f', ...jsFiles]);
   await makeCommit(decaffeinateCommitMsg);
 
   if (config.jscodeshiftScripts) {
@@ -151,7 +151,7 @@ Re-run with the "check" command for more details.`);
   let postProcessCommitMsg =
     `decaffeinate: Run post-processing cleanups on ${shortDescription}`;
   console.log(`Generating the third commit: ${postProcessCommitMsg}...`);
-  await git().add(thirdCommitModifiedFiles);
+  await git().raw(['add', '-f', ...thirdCommitModifiedFiles]);
   await makeCommit(postProcessCommitMsg);
 
   console.log(`Successfully ran decaffeinate on ${pluralize(baseFiles.length, 'file')}.`);
