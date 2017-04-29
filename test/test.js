@@ -3,17 +3,35 @@ import 'babel-polyfill';
 
 import assert from 'assert';
 import { exec } from 'mz/child_process';
-import { exists, readFile, writeFile } from 'mz/fs';
+import { exists, readFile, writeFile, mkdtemp, mkdir } from 'mz/fs';
+import { join, sep, normalize } from 'path';
+
 
 import getFilesUnderPath from '../src/util/getFilesUnderPath';
 
 let originalCwd = process.cwd();
 
+async function mkdTempSafe (prefix) {
+  let parts = normalize(prefix).split(sep);
+  // let last = parts.pop();
+  let head = '';
+  for (let part of parts) {
+    try {
+      head = join(head, part);
+      await mkdir(head);
+    } catch (e) {
+      if (e.code === 'EEXIST') continue;
+      throw e;
+    }
+  }
+  return await mkdtemp(prefix);
+}
+
 async function runCli(args) {
-  let [stdout, stderr] = (await exec(`"${originalCwd}/bin/bulk-decaffeinate" \
-    --decaffeinate-path "${originalCwd}/node_modules/.bin/decaffeinate" \
-    --jscodeshift-path "${originalCwd}/node_modules/.bin/jscodeshift" \
-    --eslint-path "${originalCwd}/node_modules/.bin/eslint" \
+  let [stdout, stderr] = (await exec(`node "${join(originalCwd,'bin','bulk-decaffeinate')}" \
+    --decaffeinate-path "${join(originalCwd, 'node_modules', '.bin', 'decaffeinate')}" \
+    --jscodeshift-path "${join(originalCwd, 'node_modules', '.bin', 'jscodeshift')}" \
+    --eslint-path "${join(originalCwd, 'node_modules', '.bin', 'eslint')}" \
     ${args}`));
   return {stdout, stderr};
 }
@@ -61,10 +79,10 @@ async function assertFilesEqual(actualFile, expectedFile) {
  * given example.
  */
 async function runWithTemplateDir(exampleName, fn) {
-  let suffix = Math.floor(Math.random() * 1000000000000);
-  let newDir = `./test/tmp-projects/${exampleName}-${suffix}`;
+  let newDirPref = `./test/tmp-projects/${exampleName}/tmp-`;
+  let newDir;
   try {
-    await exec(`mkdir -p "${newDir}"`);
+    newDir = await mkdTempSafe(newDirPref);
     await exec(`cp -r "./test/examples/${exampleName}/." "${newDir}"`);
     process.chdir(newDir);
     await fn();
@@ -118,19 +136,19 @@ describe('simple-error', () => {
 
     await assertFileIncludes(
       'decaffeinate-errors.log',
-      '===== test/examples/simple-error/error.coffee'
+      `===== ${join('test','examples','simple-error','error.coffee')}`
     );
 
     let results = JSON.parse((await readFile('decaffeinate-results.json')).toString());
     assert.equal(results.length, 2);
-    assert.equal(results[0].path, 'test/examples/simple-error/error.coffee');
+    assert.equal(results[0].path, join('test', 'examples', 'simple-error', 'error.coffee'));
     assert.notEqual(results[0].error, null);
-    assert.equal(results[1].path, 'test/examples/simple-error/success.coffee');
+    assert.equal(results[1].path, join('test', 'examples', 'simple-error', 'success.coffee'));
     assert.equal(results[1].error, null);
 
     await assertFileContents(
       'decaffeinate-successful-files.txt',
-      'test/examples/simple-error/success.coffee'
+      `${join('test', 'examples', 'simple-error', 'success.coffee')}`
     );
   });
 });
