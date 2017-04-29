@@ -18,17 +18,21 @@ export default async function runWithProgressBar(
   let numTotal = files.length;
   console.log(description);
   let numConcurrentProcesses = runInSeries ? 1 : NUM_CONCURRENT_PROCESSES;
-  let results = await runInParallel(files, asyncFn, numConcurrentProcesses, ({result}) => {
-    if (result.error) {
-      if (!allowFailures) {
-        throw new CLIError(`Error:\n${result.error}`);
+  let results;
+  try {
+    results = await runInParallel(files, asyncFn, numConcurrentProcesses, ({result}) => {
+      if (result.error) {
+        if (!allowFailures) {
+          throw new CLIError(`Error:\n${result.error}`);
+        }
+        numFailures++;
       }
-      numFailures++;
-    }
-    numProcessed++;
-    let errorString = numFailures === 0 ? '' : ` (${pluralize(numFailures, 'failure')} so far)`;
-    process.stdout.write(`\r${numProcessed}/${numTotal}${errorString}`);
-  });
-  process.stdout.write('\n');
+      numProcessed++;
+      let errorString = numFailures === 0 ? '' : ` (${pluralize(numFailures, 'failure')} so far)`;
+      process.stdout.write(`\r${numProcessed}/${numTotal}${errorString}`);
+    });
+  } finally {
+    process.stdout.write('\n');
+  }
   return results;
 }

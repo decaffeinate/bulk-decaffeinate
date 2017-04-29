@@ -28,7 +28,7 @@ export default async function convert(config) {
           `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`));
     } catch (e) {
       throw new CLIError(`\
-Some files could not be convered with decaffeinate.
+Some files could not be converted with decaffeinate.
 Re-run with the "check" command for more details.`);
     }
   }
