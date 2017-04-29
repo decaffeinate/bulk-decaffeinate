@@ -435,7 +435,7 @@ console.log(x);
     await runWithTemplateDir('invalid-subclass-constructor', async function() {
       await initGitRepo();
       let message = await runCliExpectError('convert');
-      assertIncludes(message, 'Some files could not be convered with decaffeinate');
+      assertIncludes(message, 'Some files could not be converted with decaffeinate');
     });
   });
 });
