@@ -66,6 +66,39 @@ Sample User <sample@example.com> Initial commit
     });
   });
 
+  it('converts literate coffeescript', async function() {
+    await runWithTemplateDir('literate-coffeescript', async function () {
+      await initGitRepo();
+      await runCliExpectSuccess('convert');
+      await assertFileContents('./A.js', `\
+/* eslint-disable
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+let a = 1;
+`);
+      await assertFileContents('./B.js', `\
+/* eslint-disable
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+// This is a literate file.
+let b = 1;
+`);
+      await assertFileContents('./C.js', `\
+/* eslint-disable
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+// This is another literate file.
+let c = 1;
+`);
+    });
+  });
+
   it('runs jscodeshift', async function() {
     await runWithTemplateDir('jscodeshift-test', async function() {
       await initGitRepo();

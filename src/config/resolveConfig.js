@@ -21,7 +21,7 @@ export default async function resolveConfig(commander) {
   }
   config = getCLIParamsConfig(config, commander);
   return {
-    decaffeinateArgs: config.decaffeinateArgs,
+    decaffeinateArgs: config.decaffeinateArgs || [],
     filesToProcess: config.filesToProcess,
     pathFile: config.pathFile,
     searchDirectory: config.searchDirectory,
