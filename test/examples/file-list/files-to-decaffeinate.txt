@@ -1,3 +1,3 @@
-test/examples/file-list/A.coffee
-test/examples/file-list/C.coffee
-test/examples/file-list/D.coffee
+./A.coffee
+./C.coffee
+./D.coffee

@@ -62,9 +62,11 @@ describe('simple-error', () => {
 
 describe('file-list', () => {
   it('reads a path file containing two lines, and ignores the other file', async function() {
-    let {stdout} = await runCli('check --path-file test/examples/file-list/files-to-decaffeinate.txt');
-    assertIncludes(stdout, 'Doing a dry run of decaffeinate on 3 files...');
-    assertIncludes(stdout, 'All checks succeeded');
+    await runWithTemplateDir('file-list', async function () {
+      let {stdout} = await runCli('check --path-file ./files-to-decaffeinate.txt');
+      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 3 files...');
+      assertIncludes(stdout, 'All checks succeeded');
+    });
   });
 });
 
