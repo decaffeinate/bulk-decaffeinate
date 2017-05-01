@@ -1,8 +1,9 @@
 import { exists } from 'mz/fs';
 import { resolve } from 'path';
 
-import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
-import getCoffeeFilesUnderPath from './getCoffeeFilesUnderPath';
+import getFilesFromPathFile from './getFilesFromPathFile';
+import getFilesUnderPath from '../util/getFilesUnderPath';
+import { coffeePathPredicate, jsPathFor } from '../util/FilePaths';
 import CLIError from '../util/CLIError';
 
 export default async function getFilesToProcess(config) {
@@ -18,12 +19,12 @@ async function resolveFilesToProcess(config) {
     return filesToProcess;
   }
   if (pathFile) {
-    return await getCoffeeFilesFromPathFile(pathFile);
+    return await getFilesFromPathFile(pathFile);
   }
   if (searchDirectory) {
-    return await getCoffeeFilesUnderPath(searchDirectory);
+    return await getFilesUnderPath(searchDirectory, coffeePathPredicate);
   }
-  return await getCoffeeFilesUnderPath('.');
+  return await getFilesUnderPath('.', coffeePathPredicate);
 }
 
 function resolveFileFilter(filesToProcess, config) {
@@ -35,12 +36,8 @@ function resolveFileFilter(filesToProcess, config) {
 
 async function validateFilesToProcess(filesToProcess) {
   for (let file of filesToProcess) {
-    if (!file.endsWith('.coffee')) {
-      throw new CLIError(`The file ${file} did not end with .coffee.`);
-    }
-    let jsFile = file.substring(0, file.length - '.coffee'.length) + '.js';
-    if (await exists(jsFile)) {
-      throw new CLIError(`The file ${jsFile} already exists.`);
+    if (await exists(jsPathFor(file))) {
+      throw new CLIError(`The file ${jsPathFor(file)} already exists.`);
     }
   }
 }

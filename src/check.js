@@ -1,17 +1,15 @@
 import { writeFile } from 'mz/fs';
 
 import getFilesToProcess from './config/getFilesToProcess';
-import makeCLIFn from './runner/makeCLIFn';
+import makeDecaffeinateVerifyFn from './runner/makeDecaffeinateVerifyFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import pluralize from './util/pluralize';
 
 export default async function check(config) {
-  let {decaffeinateArgs = [], decaffeinatePath} = config;
   let filesToProcess = await getFilesToProcess(config);
   let decaffeinateResults = await runWithProgressBar(
     `Doing a dry run of decaffeinate on ${pluralize(filesToProcess.length, 'file')}...`,
-    filesToProcess,
-    makeCLIFn(path => `${decaffeinatePath} ${decaffeinateArgs.join(' ')} < ${path}`),
+    filesToProcess, makeDecaffeinateVerifyFn(config),
     {allowFailures: true});
   await printResults(decaffeinateResults);
 }

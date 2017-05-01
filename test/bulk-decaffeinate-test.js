@@ -19,7 +19,7 @@ describe('basic CLI', () => {
   });
 });
 
-describe('simple-success', () => {
+describe('check', () => {
   it('discovers and runs files', async function() {
     let {stdout} = await runCli('check -d test/examples/simple-success');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
@@ -33,9 +33,15 @@ describe('simple-success', () => {
       assertIncludes(stdout, 'All checks succeeded');
     });
   });
-});
 
-describe('simple-error', () => {
+  it('checks literate coffeescript files', async function() {
+    await runWithTemplateDir('literate-coffeescript', async function() {
+      let {stdout} = await runCli('check');
+      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 3 files...');
+      assertIncludes(stdout, 'All checks succeeded');
+    });
+  });
+
   it('discovers two files and fails on one', async function() {
     let {stdout} = await runCli('check -d test/examples/simple-error');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
@@ -58,9 +64,7 @@ describe('simple-error', () => {
       'test/examples/simple-error/success.coffee'
     );
   });
-});
 
-describe('file-list', () => {
   it('reads a path file containing two lines, and ignores the other file', async function() {
     await runWithTemplateDir('file-list', async function () {
       let {stdout} = await runCli('check --path-file ./files-to-decaffeinate.txt');
@@ -68,9 +72,7 @@ describe('file-list', () => {
       assertIncludes(stdout, 'All checks succeeded');
     });
   });
-});
 
-describe('specifying individual files', () => {
   it('allows specifying one file', async function() {
     let {stdout} = await runCli('check --file test/examples/simple-success/A.coffee');
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
@@ -80,13 +82,11 @@ describe('specifying individual files', () => {
   it('allows specifying two files', async function() {
     let {stdout} = await runCli(
       `check --file test/examples/simple-success/A.coffee \
-        --file test/examples/simple-success/B.coffee`);
+      --file test/examples/simple-success/B.coffee`);
     assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
     assertIncludes(stdout, 'All checks succeeded');
   });
-});
 
-describe('config files', () => {
   it('reads the list of files from a config file', async function() {
     await runWithTemplateDir('simple-config-file', async function() {
       let {stdout, stderr} = await runCli('check');
@@ -95,9 +95,7 @@ describe('config files', () => {
       assertIncludes(stdout, 'All checks succeeded');
     });
   });
-});
 
-describe('file filtering', () => {
   it('excludes a file when instructed', async function() {
     await runWithTemplateDir('file-filter', async function() {
       let {stdout, stderr} = await runCli('check');
