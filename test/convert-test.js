@@ -49,20 +49,20 @@ Sample User <sample@example.com> Initial commit
 `
       );
     });
+  });
 
-    it('generates a nice commit message when converting three files', async function() {
-      await runWithTemplateDir('file-list', async function () {
-        await initGitRepo();
-        await runCliExpectSuccess('convert --path-file ./files-to-decaffeinate.txt');
-        let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
-        assert.equal(logStdout, `\
+  it('generates a nice commit message when converting three files', async function() {
+    await runWithTemplateDir('file-list', async function () {
+      await initGitRepo();
+      await runCliExpectSuccess('convert --path-file ./files-to-decaffeinate.txt');
+      let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
+      assert.equal(logStdout, `\
 decaffeinate <sample@example.com> decaffeinate: Run post-processing cleanups on A.coffee and 2 other files
 decaffeinate <sample@example.com> decaffeinate: Convert A.coffee and 2 other files to JS
 decaffeinate <sample@example.com> decaffeinate: Rename A.coffee and 2 other files from .coffee to .js
 Sample User <sample@example.com> Initial commit
 `
-        );
-      });
+      );
     });
   });
 

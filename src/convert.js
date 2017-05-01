@@ -4,6 +4,7 @@ import path from 'path';
 import git from 'simple-git/promise';
 import zlib from 'zlib';
 
+import getFilesToProcess from './config/getFilesToProcess';
 import makeCLIFn from './runner/makeCLIFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
@@ -16,7 +17,7 @@ import pluralize from './util/pluralize';
 export default async function convert(config) {
   await assertGitWorktreeClean();
 
-  let coffeeFiles = config.filesToProcess;
+  let coffeeFiles = await getFilesToProcess(config);
   let baseFiles = getBaseFiles(coffeeFiles);
   let {decaffeinateArgs = [], decaffeinatePath} = config;
 

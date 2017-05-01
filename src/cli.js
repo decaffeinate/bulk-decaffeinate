@@ -73,7 +73,7 @@ async function runCommand(command) {
     } else if (command === 'clean') {
       await clean();
     } else if (command === 'land') {
-      let config = await resolveConfig(commander, false);
+      let config = await resolveConfig(commander);
       await land(config);
     } else {
       commander.outputHelp();

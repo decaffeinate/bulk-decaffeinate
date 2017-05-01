@@ -4,20 +4,14 @@ import readline from 'mz/readline';
 import { resolve } from 'path';
 import requireUncached from 'require-uncached';
 
-import getCoffeeFilesFromPathFile from './getCoffeeFilesFromPathFile';
-import getCoffeeFilesUnderPath from './getCoffeeFilesUnderPath';
 import CLIError from '../util/CLIError';
 import execLive from '../util/execLive';
 
 /**
  * Resolve the configuration from a number of sources: any number of config
- * files and CLI options. Then "canonicalize" the config, e.g. by resolving the
- * list of files to process and inferring any paths if necessary.
- *
- * Some commands don't actually use the list of files, so we shouldn't do file
- * sanity checks for those.
+ * files and CLI options. Then "canonicalize" the config as much as we can.
  */
-export default async function resolveConfig(commander, requireValidFiles = true) {
+export default async function resolveConfig(commander) {
   let config = {};
 
   let currentDirFiles = await readdir('.');
@@ -26,14 +20,12 @@ export default async function resolveConfig(commander, requireValidFiles = true)
     config = await applyPossibleConfig(filename, config);
   }
   config = getCLIParamsConfig(config, commander);
-  let filesToProcess = await resolveFilesToProcess(config, requireValidFiles);
-  filesToProcess = resolveFileFilter(filesToProcess, config);
-  if (requireValidFiles) {
-    await validateFilesToProcess(filesToProcess);
-  }
   return {
     decaffeinateArgs: config.decaffeinateArgs,
-    filesToProcess,
+    filesToProcess: config.filesToProcess,
+    pathFile: config.pathFile,
+    searchDirectory: config.searchDirectory,
+    fileFilterFn: config.fileFilterFn,
     fixImportsConfig: config.fixImportsConfig,
     jscodeshiftScripts: config.jscodeshiftScripts,
     landConfig: config.landConfig,
@@ -120,27 +112,6 @@ function getCLIParamsConfig(config, commander) {
   return config;
 }
 
-async function resolveFilesToProcess(config, requireValidFiles) {
-  let {filesToProcess, pathFile, searchDirectory} = config;
-  if (filesToProcess) {
-    return filesToProcess;
-  }
-  if (pathFile) {
-    return await getCoffeeFilesFromPathFile(pathFile, requireValidFiles);
-  }
-  if (searchDirectory) {
-    return await getCoffeeFilesUnderPath(searchDirectory);
-  }
-  return await getCoffeeFilesUnderPath('.');
-}
-
-function resolveFileFilter(filesToProcess, config) {
-  if (!config.fileFilterFn) {
-    return filesToProcess;
-  }
-  return filesToProcess.filter(path => config.fileFilterFn(resolve(path)));
-}
-
 async function resolveDecaffeinatePath(config) {
   if (config.decaffeinatePath) {
     return config.decaffeinatePath;
@@ -191,18 +162,6 @@ async function resolveBinary(binaryName) {
       await execLive(`npm install -g ${binaryName}`);
       console.log(`Successfully installed ${binaryName}\n`);
       return binaryName;
-    }
-  }
-}
-
-async function validateFilesToProcess(filesToProcess) {
-  for (let file of filesToProcess) {
-    if (!file.endsWith('.coffee')) {
-      throw new CLIError(`The file ${file} did not end with .coffee.`);
-    }
-    let jsFile = file.substring(0, file.length - '.coffee'.length) + '.js';
-    if (await exists(jsFile)) {
-      throw new CLIError(`The file ${jsFile} already exists.`);
     }
   }
 }
