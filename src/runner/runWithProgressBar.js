@@ -21,7 +21,7 @@ export default async function runWithProgressBar(
   let results;
   try {
     results = await runInParallel(files, asyncFn, numConcurrentProcesses, ({result}) => {
-      if (result.error) {
+      if (result && result.error) {
         if (!allowFailures) {
           throw new CLIError(`Error:\n${result.error}`);
         }

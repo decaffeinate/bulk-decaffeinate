@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 import getFilesFromPathFile from './getFilesFromPathFile';
 import getFilesUnderPath from '../util/getFilesUnderPath';
-import { coffeePathPredicate, jsPathFor } from '../util/FilePaths';
+import { coffeePathPredicate, isExtensionless, jsPathFor } from '../util/FilePaths';
 import CLIError from '../util/CLIError';
 
 export default async function getFilesToProcess(config) {
@@ -35,9 +35,13 @@ function resolveFileFilter(filesToProcess, config) {
 }
 
 async function validateFilesToProcess(filesToProcess) {
-  for (let file of filesToProcess) {
-    if (await exists(jsPathFor(file))) {
-      throw new CLIError(`The file ${jsPathFor(file)} already exists.`);
+  for (let path of filesToProcess) {
+    if (isExtensionless(path)) {
+      continue;
+    }
+    let jsPath = jsPathFor(path);
+    if (await exists(jsPath)) {
+      throw new CLIError(`The file ${jsPath} already exists.`);
     }
   }
 }
