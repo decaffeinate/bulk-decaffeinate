@@ -19,7 +19,7 @@
  * details on why decaffeinate can't solve this itself.
  */
 import { existsSync, readFileSync } from 'fs';
-import path from 'path';
+import { dirname, resolve } from 'path';
 import zlib from 'zlib';
 
 export default function (fileInfo, api, options) {
@@ -30,7 +30,7 @@ export default function (fileInfo, api, options) {
   );
   let {convertedFiles, absoluteImportPaths} = decodedOptions;
   let j = api.jscodeshift;
-  let thisFilePath = path.resolve(fileInfo.path);
+  let thisFilePath = resolve(fileInfo.path);
   let root = j(fileInfo.source);
 
   function convertFile() {
@@ -140,14 +140,14 @@ export default function (fileInfo, api, options) {
       importPath += '.js';
     }
     if (importPath.startsWith('.')) {
-      let currentDir = path.dirname(importingFilePath);
-      let relativePath = path.resolve(currentDir, importPath);
+      let currentDir = dirname(importingFilePath);
+      let relativePath = resolve(currentDir, importPath);
       if (existsSync(relativePath)) {
         return relativePath;
       }
     } else {
       for (let absoluteImportPath of absoluteImportPaths) {
-        let absolutePath = path.resolve(absoluteImportPath, importPath);
+        let absolutePath = resolve(absoluteImportPath, importPath);
         if (existsSync(absolutePath)) {
           return absolutePath;
         }
@@ -162,11 +162,11 @@ export default function (fileInfo, api, options) {
    */
   function getExportsInformation(filePath) {
     let source = readFileSync(filePath).toString();
-    let root = j(source);
+    let otherRoot = j(source);
 
     let hasDefaultExport = false;
     let namedExports = [];
-    root.find(j.ExportNamedDeclaration)
+    otherRoot.find(j.ExportNamedDeclaration)
       .forEach(p => {
         for (let specifier of p.node.specifiers) {
           namedExports.push(specifier.exported.name);
@@ -183,10 +183,10 @@ export default function (fileInfo, api, options) {
         }
       });
 
-    root.find(j.ExportDefaultDeclaration)
+    otherRoot.find(j.ExportDefaultDeclaration)
       .forEach(() => {hasDefaultExport = true;});
 
-    root.find(j.ExportAllDeclaration)
+    otherRoot.find(j.ExportAllDeclaration)
       .forEach(p => {
         let otherFilePath = resolveImportPath(filePath, p.node.source.value);
         if (otherFilePath === null) {
@@ -496,7 +496,7 @@ export default function (fileInfo, api, options) {
    * Create a destructure statement after the import statement. This is a way
    * to simulate named imports for default imports and star imports.
    */
-  function insertImportDestructure(path, importNames, specifierIndex, importName) {
+  function insertImportDestructure(path, importNames, specifierIndex, fullImportName) {
     let destructureFields = importNames.map(
       importName => {
         let specifier = specifierIndex.namedImportsByImportedName.get(importName);
@@ -506,7 +506,7 @@ export default function (fileInfo, api, options) {
         };
       }
     );
-    path.insertAfter(makeDestructureStatement(destructureFields, importName));
+    path.insertAfter(makeDestructureStatement(destructureFields, fullImportName));
   }
 
   function makeDestructureStatement(destructureFields, objName) {

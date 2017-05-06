@@ -1,6 +1,6 @@
 import { exec } from 'mz/child_process';
 import { copy, move, readFile, unlink, writeFile } from 'fs-promise';
-import path from 'path';
+import { basename, join, relative, resolve } from 'path';
 import git from 'simple-git/promise';
 import zlib from 'zlib';
 
@@ -112,11 +112,11 @@ Re-run with the "check" command for more details.`);
     if (!absoluteImportPaths) {
       absoluteImportPaths = [];
     }
-    let scriptPath = path.join(__dirname, '../jscodeshift-scripts-dist/fix-imports.js');
+    let scriptPath = join(__dirname, '../jscodeshift-scripts-dist/fix-imports.js');
 
     let options = {
-      convertedFiles: jsFiles.map(p => path.resolve(p)),
-      absoluteImportPaths: absoluteImportPaths.map(p => path.resolve(p)),
+      convertedFiles: jsFiles.map(p => resolve(p)),
+      absoluteImportPaths: absoluteImportPaths.map(p => resolve(p)),
     };
     let eligibleFixImportsFiles = await getEligibleFixImportsFiles(searchPath, jsFiles);
     console.log('Fixing any imports across the whole codebase...');
@@ -124,7 +124,7 @@ Re-run with the "check" command for more details.`);
       // Note that the args can get really long, so we take reasonable steps to
       // reduce the chance of hitting the system limit on arg length
       // (256K by default on Mac).
-      let eligibleRelativePaths = eligibleFixImportsFiles.map(p => path.relative('', p));
+      let eligibleRelativePaths = eligibleFixImportsFiles.map(p => relative('', p));
       thirdCommitModifiedFiles = eligibleFixImportsFiles;
       let encodedOptions = zlib.deflateSync(JSON.stringify(options)).toString('base64');
       await execLive(`\
@@ -171,7 +171,7 @@ Please revert or commit them before running convert.`);
 }
 
 function getShortDescription(coffeeFiles) {
-  let firstFile = path.basename(coffeeFiles[0]);
+  let firstFile = basename(coffeeFiles[0]);
   if (coffeeFiles.length === 1) {
     return firstFile;
   } else {
@@ -185,26 +185,26 @@ function resolveJscodeshiftScriptPath(scriptPath) {
       'remove-coffee-from-imports.js',
       'top-level-this-to-exports.js',
     ].includes(scriptPath)) {
-    return path.join(__dirname, `../jscodeshift-scripts-dist/${scriptPath}`);
+    return join(__dirname, `../jscodeshift-scripts-dist/${scriptPath}`);
   }
   return scriptPath;
 }
 
 async function getEligibleFixImportsFiles(searchPath, jsFiles) {
-  let jsBasenames = jsFiles.map(p => path.basename(p, '.js'));
-  let resolvedPaths = jsFiles.map(p => path.resolve(p));
+  let jsBasenames = jsFiles.map(p => basename(p, '.js'));
+  let resolvedPaths = jsFiles.map(p => resolve(p));
   let allJsFiles = await getFilesUnderPath(searchPath, p => p.endsWith('.js'));
   await runWithProgressBar(
     'Searching for files that may need to have updated imports...',
     allJsFiles,
     async function(p) {
-      let resolvedPath = path.resolve(p);
+      let resolvedPath = resolve(p);
       if (resolvedPaths.includes(resolvedPath)) {
         return {error: null};
       }
       let contents = (await readFile(resolvedPath)).toString();
-      for (let basename of jsBasenames) {
-        if (contents.includes(basename)) {
+      for (let jsBasename of jsBasenames) {
+        if (contents.includes(jsBasename)) {
           resolvedPaths.push(resolvedPath);
           return {error: null};
         }
