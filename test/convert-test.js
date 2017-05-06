@@ -254,6 +254,13 @@ console.log('Ran the thing!');
 
 console.log('This script is executable so it should be converted.');
 `);
+      await assertFileContents('./bin/nestedExecutableScript', `\
+#!/usr/bin/env node
+// TODO: This file was created by bulk-decaffeinate.
+// Sanity-check the conversion and remove this comment.
+
+console.log('This nested script is executable so it should be converted.');
+`);
       await assertFileContents('./executableScriptWithoutShebang', untouchedContents1);
       await assertFileContents('./executableScriptWithWrongShebang', untouchedContents2);
       await assertFileContents('./nonExecutableScript', untouchedContents3);
