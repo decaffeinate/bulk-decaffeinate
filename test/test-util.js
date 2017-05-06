@@ -3,7 +3,7 @@ import 'babel-polyfill';
 
 import assert from 'assert';
 import { exec } from 'mz/child_process';
-import { readFile } from 'mz/fs';
+import { exists, readFile } from 'mz/fs';
 
 let originalCwd = process.cwd();
 
@@ -30,6 +30,10 @@ export function assertIncludes(output, substr) {
     output.includes(substr),
     `Expected the output to include "${substr}".\n\nFull output:\n${output}`
   );
+}
+
+export async function assertExists(path) {
+  assert(await exists(path), `Expected ${path} to exist.`);
 }
 
 export async function assertFileContents(path, expectedContents) {

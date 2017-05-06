@@ -15,23 +15,29 @@ export default async function getFilesToProcess(config) {
 
 async function resolveFilesToProcess(config) {
   let {filesToProcess, pathFile, searchDirectory} = config;
+  if (!filesToProcess && !pathFile && !searchDirectory) {
+    return await getFilesUnderPath('.', shouldConvertFile);
+  }
+  let files = [];
   if (filesToProcess) {
-    return filesToProcess;
+    files.push(...filesToProcess);
   }
   if (pathFile) {
-    return await getFilesFromPathFile(pathFile);
+    files.push(...await getFilesFromPathFile(pathFile));
   }
   if (searchDirectory) {
-    return await getFilesUnderPath(searchDirectory, shouldConvertFile);
+    files.push(...await getFilesUnderPath(searchDirectory, shouldConvertFile));
   }
-  return await getFilesUnderPath('.', shouldConvertFile);
+  files = files.map(path => resolve(path));
+  files = Array.from(new Set(files)).sort();
+  return files;
 }
 
 function resolveFileFilter(filesToProcess, config) {
   if (!config.fileFilterFn) {
     return filesToProcess;
   }
-  return filesToProcess.filter(path => config.fileFilterFn(resolve(path)));
+  return filesToProcess.filter(path => config.fileFilterFn(path));
 }
 
 async function validateFilesToProcess(filesToProcess) {

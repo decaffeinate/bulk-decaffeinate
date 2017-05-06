@@ -3,7 +3,6 @@ import assert from 'assert';
 import { readFile } from 'mz/fs';
 
 import {
-  assertFileContents,
   assertFileIncludes,
   assertIncludes,
   runCli,
@@ -49,17 +48,17 @@ describe('check', () => {
 
     await assertFileIncludes(
       'decaffeinate-errors.log',
-      '===== test/examples/simple-error/error.coffee'
+      'test/examples/simple-error/error.coffee'
     );
 
     let results = JSON.parse((await readFile('decaffeinate-results.json')).toString());
     assert.equal(results.length, 2);
-    assert.equal(results[0].path, 'test/examples/simple-error/error.coffee');
+    assert(results[0].path.endsWith('test/examples/simple-error/error.coffee'));
     assert.notEqual(results[0].error, null);
-    assert.equal(results[1].path, 'test/examples/simple-error/success.coffee');
+    assert(results[1].path.endsWith('test/examples/simple-error/success.coffee'));
     assert.equal(results[1].error, null);
 
-    await assertFileContents(
+    await assertFileIncludes(
       'decaffeinate-successful-files.txt',
       'test/examples/simple-error/success.coffee'
     );

@@ -4,6 +4,7 @@ import { exec } from 'mz/child_process';
 import { exists, readFile, writeFile } from 'mz/fs';
 
 import {
+  assertExists,
   assertFileContents,
   assertIncludes,
   initGitRepo,
@@ -63,6 +64,21 @@ decaffeinate <sample@example.com> decaffeinate: Rename A.coffee and 2 other file
 Sample User <sample@example.com> Initial commit
 `
       );
+    });
+  });
+
+  it('combines multiple path specifiers', async function() {
+    await runWithTemplateDir('multiple-path-specifiers', async function () {
+      await initGitRepo();
+      await runCliExpectSuccess('convert');
+      await assertExists('./A.js');
+      await assertExists('./B.js');
+      await assertExists('./C.js');
+      await assertExists('./D.coffee');
+      await assertExists('./dir1/E.js');
+      await assertExists('./dir1/F.js');
+      await assertExists('./dir2/G.coffee');
+      await assertExists('./dir2/H.js');
     });
   });
 
