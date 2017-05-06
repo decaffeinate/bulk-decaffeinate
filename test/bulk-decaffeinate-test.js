@@ -104,4 +104,13 @@ describe('check', () => {
       assertIncludes(stdout, 'All checks succeeded');
     });
   });
+
+  it('automatically discovers executable scripts', async function() {
+    await runWithTemplateDir('executable-extensionless-scripts', async function() {
+      let {stdout, stderr} = await runCli('check');
+      assert.equal(stderr, '');
+      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
+      assertIncludes(stdout, 'All checks succeeded');
+    });
+  });
 });

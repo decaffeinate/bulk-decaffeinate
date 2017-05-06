@@ -1,0 +1,1 @@
+console.log 'This script has no shebang line, so should not be converted.'
