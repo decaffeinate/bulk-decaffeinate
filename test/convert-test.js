@@ -222,6 +222,15 @@ console.log('Ran the thing!');
     });
   });
 
+  it('allows converting a directory with no files', async function() {
+    await runWithTemplateDir('empty-directory', async function () {
+      await initGitRepo();
+      let {stdout, stderr} = await runCli('convert');
+      assert(stderr.length === 0, `Nonempty stderr. stderr:\n${stderr}\n\nstdout:\n${stdout}`);
+      assertIncludes(stdout, 'There were no CoffeeScript files to convert.');
+    });
+  });
+
   it('runs eslint, applying fixes and disabling existing issues', async function() {
     await runWithTemplateDir('eslint-fix-test', async function() {
       await initGitRepo();
