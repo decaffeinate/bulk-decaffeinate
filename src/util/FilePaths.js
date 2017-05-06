@@ -1,3 +1,5 @@
+import executable from 'executable';
+import { readFile } from 'mz/fs';
 import { basename, dirname, extname, join } from 'path';
 
 const COFFEE_EXTENSIONS = ['.coffee', '.litcoffee', '.coffee.md'];
@@ -14,9 +16,19 @@ function basePathFor(path) {
   return join(dirname(path), basename(path, extension));
 }
 
-export function coffeePathPredicate(path) {
-  return COFFEE_EXTENSIONS.some(ext =>
-    path.endsWith(ext) && !path.endsWith(`.original${ext}`));
+export async function shouldConvertFile(path) {
+  if (COFFEE_EXTENSIONS.some(ext =>
+      path.endsWith(ext) && !path.endsWith(`.original${ext}`))) {
+    return true;
+  }
+  if (isExtensionless(path) && await executable(path)) {
+    let contents = await readFile(path);
+    let firstLine = contents.toString().split('\n')[0];
+    if (firstLine.startsWith('#!') && firstLine.includes('coffee')) {
+      return true;
+    }
+  }
+  return false;
 }
 
 export function isExtensionless(path) {

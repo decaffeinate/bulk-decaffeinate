@@ -1,7 +1,7 @@
 /* eslint-env mocha */
 import assert from 'assert';
 import { exec } from 'mz/child_process';
-import { exists, writeFile } from 'mz/fs';
+import { exists, readFile, writeFile } from 'mz/fs';
 
 import {
   assertFileContents,
@@ -219,6 +219,28 @@ module.exports = c;
 
 console.log('Ran the thing!');
 `);
+    });
+  });
+
+  it('automatically discovers and converts extensionless scripts', async function() {
+    await runWithTemplateDir('executable-extensionless-scripts', async function () {
+      let untouchedContents1 = (await readFile('./executableScriptWithoutShebang')).toString();
+      let untouchedContents2 = (await readFile('./executableScriptWithWrongShebang')).toString();
+      let untouchedContents3 = (await readFile('./nonExecutableScript')).toString();
+
+      await initGitRepo();
+      await runCliExpectSuccess('convert');
+
+      await assertFileContents('./executableScript', `\
+#!/usr/bin/env node
+// TODO: This file was created by bulk-decaffeinate.
+// Sanity-check the conversion and remove this comment.
+
+console.log('This script is executable so it should be converted.');
+`);
+      await assertFileContents('./executableScriptWithoutShebang', untouchedContents1);
+      await assertFileContents('./executableScriptWithWrongShebang', untouchedContents2);
+      await assertFileContents('./nonExecutableScript', untouchedContents3);
     });
   });
 

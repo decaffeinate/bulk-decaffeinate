@@ -5,7 +5,7 @@ import { join } from 'path';
  * Recursively discover any matching files in the current directory, ignoring
  * things like node_modules and .git.
  */
-export default async function getFilesUnderPath(dirPath, pathPredicate) {
+export default async function getFilesUnderPath(dirPath, asyncPathPredicate) {
   let resultFiles = [];
   let children = await readdir(dirPath);
   for (let child of children) {
@@ -14,9 +14,9 @@ export default async function getFilesUnderPath(dirPath, pathPredicate) {
     }
     let childPath = join(dirPath, child);
     if ((await stat(childPath)).isDirectory()) {
-      let subdirCoffeeFiles = await getFilesUnderPath(childPath, pathPredicate);
+      let subdirCoffeeFiles = await getFilesUnderPath(childPath, asyncPathPredicate);
       resultFiles.push(...subdirCoffeeFiles);
-    } else if (pathPredicate(child)) {
+    } else if (await asyncPathPredicate(child)) {
       resultFiles.push(childPath);
     }
   }

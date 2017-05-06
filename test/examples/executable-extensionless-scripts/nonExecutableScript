@@ -1,0 +1,3 @@
+#!/usr/bin/env coffee
+
+console.log 'This script is not executable so it should not be converted.'

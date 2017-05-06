@@ -3,7 +3,7 @@ import { resolve } from 'path';
 
 import getFilesFromPathFile from './getFilesFromPathFile';
 import getFilesUnderPath from '../util/getFilesUnderPath';
-import { coffeePathPredicate, isExtensionless, jsPathFor } from '../util/FilePaths';
+import { shouldConvertFile, isExtensionless, jsPathFor } from '../util/FilePaths';
 import CLIError from '../util/CLIError';
 
 export default async function getFilesToProcess(config) {
@@ -22,9 +22,9 @@ async function resolveFilesToProcess(config) {
     return await getFilesFromPathFile(pathFile);
   }
   if (searchDirectory) {
-    return await getFilesUnderPath(searchDirectory, coffeePathPredicate);
+    return await getFilesUnderPath(searchDirectory, shouldConvertFile);
   }
-  return await getFilesUnderPath('.', coffeePathPredicate);
+  return await getFilesUnderPath('.', shouldConvertFile);
 }
 
 function resolveFileFilter(filesToProcess, config) {

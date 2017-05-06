@@ -1,0 +1,3 @@
+#!/bin/sh
+
+echo 'This is not a CoffeeScript file, so should not be converted.'
