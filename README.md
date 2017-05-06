@@ -154,7 +154,7 @@ module.exports = {
 The following config keys can be specified:
 
 * `searchDirectory`: a path to a directory where bulk-decaffeinate will search
-  for all .coffee files (ignoring files in `node_modules` directories).
+  for all CoffeeScript files (ignoring files in `node_modules` directories).
 * `pathFile`: a path to a file containing a list of .coffee file paths to
   process, one per line.
 * `filesToProcess`: an array of .coffee file paths to process.
@@ -163,8 +163,9 @@ The following config keys can be specified:
   run after the normal file discovery process, and is useful if there are
   specific files or directories that should not be converted.
 
-The `filesToProcess` setting has highest precedence, then `pathFile`, then
-`searchDirectory`.
+If multiple of `searchDirectory`, `pathFile`, or `filesToProcess` are specified,
+the union of the files is taken. If none is specified, bulk-decaffeinate will
+recursively discover all CoffeeScript files in the working directory.
 
 Each of these has a command line arg version; see the result of `--help` for
 more information.

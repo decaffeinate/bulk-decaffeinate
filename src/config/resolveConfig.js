@@ -1,5 +1,5 @@
 import { exec } from 'mz/child_process';
-import { exists, readdir, readFile, stat } from 'mz/fs';
+import { exists, readdir, stat } from 'mz/fs';
 import readline from 'mz/readline';
 import { resolve } from 'path';
 import requireUncached from 'require-uncached';
@@ -46,15 +46,7 @@ async function applyPossibleConfig(filename, config) {
   }
 
   let filePath = resolve(filename);
-  if (filename.endsWith('.json')) {
-    try {
-      let newConfig = JSON.parse(await readFile(filePath));
-      return Object.assign(config, newConfig);
-    } catch (e) {
-      throw new CLIError(
-        `Error reading file ${filePath}. Make sure it is a valid JSON file.`);
-    }
-  } else if (filename.endsWith('.config.js')) {
+  if (filename.endsWith('.config.js')) {
     try {
       let newConfig = requireUncached(filePath);
       return Object.assign(config, newConfig);
