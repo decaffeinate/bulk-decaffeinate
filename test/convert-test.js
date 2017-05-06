@@ -191,7 +191,6 @@ console.log('This is a file');
     });
   });
 
-
   it('respects decaffeinate args', async function() {
     await runWithTemplateDir('decaffeinate-args-test', async function () {
       await initGitRepo();
@@ -205,6 +204,20 @@ console.log('This is a file');
 // Fix any style issues and re-enable lint.
 let a = require('b');
 module.exports = c;
+`);
+    });
+  });
+
+  it('allows converting extensionless scripts', async function() {
+    await runWithTemplateDir('extensionless-script', async function () {
+      await initGitRepo();
+      await runCliExpectSuccess('convert');
+      await assertFileContents('./runThing', `\
+#!/usr/bin/env node
+// TODO: This file was created by bulk-decaffeinate.
+// Sanity-check the conversion and remove this comment.
+
+console.log('Ran the thing!');
 `);
     });
   });
