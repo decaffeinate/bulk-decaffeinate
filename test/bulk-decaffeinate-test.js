@@ -108,7 +108,7 @@ describe('check', () => {
     await runWithTemplateDir('executable-extensionless-scripts', async function() {
       let {stdout, stderr} = await runCli('check');
       assert.equal(stderr, '');
-      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
+      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 2 files...');
       assertIncludes(stdout, 'All checks succeeded');
     });
   });

@@ -16,7 +16,7 @@ export default async function getFilesUnderPath(dirPath, asyncPathPredicate) {
     if ((await stat(childPath)).isDirectory()) {
       let subdirCoffeeFiles = await getFilesUnderPath(childPath, asyncPathPredicate);
       resultFiles.push(...subdirCoffeeFiles);
-    } else if (await asyncPathPredicate(child)) {
+    } else if (await asyncPathPredicate(childPath)) {
       resultFiles.push(childPath);
     }
   }
