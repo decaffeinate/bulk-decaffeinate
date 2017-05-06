@@ -20,6 +20,11 @@ export default async function convert(config) {
   await assertGitWorktreeClean();
 
   let coffeeFiles = await getFilesToProcess(config);
+  if (coffeeFiles.length === 0) {
+    console.log('There were no CoffeeScript files to convert.');
+    return;
+  }
+
   let coffeeFilesWithExtension = coffeeFiles.filter(p => !isExtensionless(p));
   // Extensionless files are special because they don't change their name, so
   // handle them separately in some cases.
