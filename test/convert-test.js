@@ -1,10 +1,11 @@
 /* eslint-env mocha */
 import assert from 'assert';
 import { exec } from 'mz/child_process';
-import { exists, readFile, writeFile } from 'mz/fs';
+import { readFile, writeFile } from 'mz/fs';
 
 import {
   assertExists,
+  assertNotExists,
   assertFileContents,
   assertIncludes,
   initGitRepo,
@@ -315,18 +316,16 @@ console.log(x);
   });
 
   it('generates backup files that are removed by clean', async function() {
-    await runWithTemplateDir('simple-success', async function() {
+    await runWithTemplateDir('backup-files', async function() {
       await initGitRepo();
       await runCli('convert');
-      assert(
-        await exists('./A.original.coffee'),
-        'Expected a backup file to be created.'
-      );
+      await assertExists('./A.original.coffee');
+      await assertExists('./B.original.coffee.md');
+      await assertExists('./C.original');
       await runCli('clean');
-      assert(
-        !await exists('./A.original.coffee'),
-        'Expected the "clean" command to get rid of the backup file.'
-      );
+      await assertNotExists('./A.original.coffee');
+      await assertNotExists('./B.original.coffee.md');
+      await assertNotExists('./C.original');
     });
   });
 

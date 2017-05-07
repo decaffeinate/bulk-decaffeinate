@@ -36,6 +36,10 @@ export async function assertExists(path) {
   assert(await exists(path), `Expected ${path} to exist.`);
 }
 
+export async function assertNotExists(path) {
+  assert(!await exists(path), `Expected ${path} to not exist.`);
+}
+
 export async function assertFileContents(path, expectedContents) {
   let contents = (await readFile(path)).toString();
   assert.equal(contents, expectedContents);
