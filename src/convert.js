@@ -48,7 +48,7 @@ Re-run with the "check" command for more details.`);
     });
 
   await runWithProgressBar(
-    'Renaming files from .coffee to .js...',
+    `Renaming files from .coffee to .${config.outputFileExtension}...`,
     movingCoffeeFiles,
     async function(coffeePath) {
       await move(coffeePath, jsPathFor(coffeePath, config));
@@ -56,7 +56,7 @@ Re-run with the "check" command for more details.`);
 
   let shortDescription = getShortDescription(coffeeFiles);
   let renameCommitMsg =
-    `decaffeinate: Rename ${shortDescription} from .coffee to .js`;
+    `decaffeinate: Rename ${shortDescription} from .coffee to .${config.outputFileExtension}`;
 
   if (movingCoffeeFiles.length > 0) {
     console.log(`Generating the first commit: "${renameCommitMsg}"...`);

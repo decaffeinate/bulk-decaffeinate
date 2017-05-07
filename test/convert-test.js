@@ -339,6 +339,14 @@ console.log(x);
     });
   });
 
+  it('allows a custom file extension', async function() {
+    await runWithTemplateDir('convert-to-typescript', async function() {
+      await initGitRepo();
+      await runCli('convert');
+      await assertExists('./A.ts');
+    });
+  });
+
   it('handles a missing eslint config', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();

@@ -53,7 +53,7 @@ export function jsPathFor(path, config) {
   if (isExtensionless(path)) {
     return path;
   } else {
-    return basePathFor(path) + '.js';
+    return basePathFor(path) + '.' + config.outputFileExtension;
   }
 }
 
