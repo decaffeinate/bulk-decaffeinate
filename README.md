@@ -72,8 +72,8 @@ bulk-decaffeinate supports a number of commands:
   is in the hash fragment and not a regular query param, your code is never sent
   to the server.
 * `convert` actually converts the files from CofeeScript to JavaScript.
-* `clean` deletes all .original.coffee files in the current directory or any of
-  its subdirectories.
+* `clean` deletes all files with ".original" in the name in the current
+  directory or any of its subdirectories.
 * `land` packages multiple commits into a merge commit based on an remote branch
   (`origin/master` by default). Splitting the decaffeinate work into separate
   commits allows git to properly track file history, but it can create added
