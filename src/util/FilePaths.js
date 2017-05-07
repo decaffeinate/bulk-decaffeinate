@@ -46,7 +46,10 @@ export function backupPathFor(path) {
  * the input file is an extensionless script, we prefer to keep it extensionless
  * (and decaffeinate handles the shebang line).
  */
-export function jsPathFor(path) {
+export function jsPathFor(path, config) {
+  if (config.customNames[path]) {
+    return config.customNames[path];
+  }
   if (isExtensionless(path)) {
     return path;
   } else {

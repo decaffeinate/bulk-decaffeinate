@@ -12,11 +12,13 @@ describe('FilePaths', () => {
   });
 
   it('generates correct js paths', () => {
-    assert.equal(FilePaths.jsPathFor('./a/b/foo.coffee'), 'a/b/foo.js');
-    assert.equal(FilePaths.jsPathFor('foo.coffee'), 'foo.js');
-    assert.equal(FilePaths.jsPathFor('foo.coffee.md'), 'foo.js');
-    assert.equal(FilePaths.jsPathFor('foo.cjsx'), 'foo.js');
-    assert.equal(FilePaths.jsPathFor('foo'), 'foo');
+    let emptyConfig = {customNames: {}};
+    assert.equal(FilePaths.jsPathFor('./a/b/foo.coffee', emptyConfig), 'a/b/foo.js');
+    assert.equal(FilePaths.jsPathFor('foo.coffee', emptyConfig), 'foo.js');
+    assert.equal(FilePaths.jsPathFor('foo.coffee.md', emptyConfig), 'foo.js');
+    assert.equal(FilePaths.jsPathFor('foo.cjsx', emptyConfig), 'foo.js');
+    assert.equal(FilePaths.jsPathFor('foo', emptyConfig), 'foo');
+    assert.equal(FilePaths.jsPathFor('foo', {customNames: {foo: 'bar'}}), 'bar');
   });
 
   it('generates correct decaffeinate out paths', () => {

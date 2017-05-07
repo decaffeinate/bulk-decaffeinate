@@ -10,7 +10,7 @@ import makeDecaffeinateVerifyFn from './runner/makeDecaffeinateVerifyFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
 import execLive from './util/execLive';
-import { backupPathFor, decaffeinateOutPathFor, isExtensionless, jsPathFor } from './util/FilePaths';
+import { backupPathFor, decaffeinateOutPathFor, jsPathFor } from './util/FilePaths';
 import getFilesUnderPath from './util/getFilesUnderPath';
 import isWorktreeEmpty from './util/isWorktreeEmpty';
 import makeCommit from './util/makeCommit';
@@ -25,10 +25,7 @@ export default async function convert(config) {
     return;
   }
 
-  let coffeeFilesWithExtension = coffeeFiles.filter(p => !isExtensionless(p));
-  // Extensionless files are special because they don't change their name, so
-  // handle them separately in some cases.
-  let coffeeFilesWithoutExtension = coffeeFiles.filter(p => isExtensionless(p));
+  let movingCoffeeFiles = coffeeFiles.filter(p => jsPathFor(p, config) !== p);
   let {decaffeinateArgs = [], decaffeinatePath} = config;
 
   if (!config.skipVerify) {
@@ -52,27 +49,27 @@ Re-run with the "check" command for more details.`);
 
   await runWithProgressBar(
     'Renaming files from .coffee to .js...',
-    coffeeFilesWithExtension,
+    movingCoffeeFiles,
     async function(coffeePath) {
-      await move(coffeePath, jsPathFor(coffeePath));
+      await move(coffeePath, jsPathFor(coffeePath, config));
     });
 
   let shortDescription = getShortDescription(coffeeFiles);
   let renameCommitMsg =
     `decaffeinate: Rename ${shortDescription} from .coffee to .js`;
 
-  if (coffeeFilesWithExtension.length > 0) {
+  if (movingCoffeeFiles.length > 0) {
     console.log(`Generating the first commit: "${renameCommitMsg}"...`);
-    await git().rm(coffeeFilesWithExtension);
-    await git().raw(['add', '-f', ...coffeeFilesWithExtension.map(p => jsPathFor(p))]);
+    await git().rm(movingCoffeeFiles);
+    await git().raw(['add', '-f', ...movingCoffeeFiles.map(p => jsPathFor(p, config))]);
     await makeCommit(renameCommitMsg);
   }
 
   await runWithProgressBar(
     'Moving files back...',
-    coffeeFilesWithExtension,
+    movingCoffeeFiles,
     async function(coffeePath) {
-      await move(jsPathFor(coffeePath), coffeePath);
+      await move(jsPathFor(coffeePath, config), coffeePath);
     });
 
   await runWithProgressBar(
@@ -90,15 +87,19 @@ Re-run with the "check" command for more details.`);
 
   await runWithProgressBar(
     'Setting proper extension for all files...',
-    coffeeFilesWithoutExtension,
+    coffeeFiles,
     async function(coffeePath) {
-      await move(decaffeinateOutPathFor(coffeePath), jsPathFor(coffeePath));
+      let decaffeinateOutPath = decaffeinateOutPathFor(coffeePath);
+      let jsPath = jsPathFor(coffeePath, config);
+      if (decaffeinateOutPath !== jsPath) {
+        await move(decaffeinateOutPath, jsPath);
+      }
     });
 
   let decaffeinateCommitMsg =
     `decaffeinate: Convert ${shortDescription} to JS`;
   console.log(`Generating the second commit: ${decaffeinateCommitMsg}...`);
-  let jsFiles = coffeeFiles.map(f => jsPathFor(f));
+  let jsFiles = coffeeFiles.map(f => jsPathFor(f, config));
   await git().raw(['add', '-f', ...jsFiles]);
   await makeCommit(decaffeinateCommitMsg);
 

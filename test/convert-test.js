@@ -329,6 +329,16 @@ console.log(x);
     });
   });
 
+  it('properly handles custom names', async function() {
+    await runWithTemplateDir('custom-file-names', async function() {
+      await initGitRepo();
+      await runCli('convert');
+      await assertExists('./A.js');
+      await assertExists('./dir/B.ts');
+      await assertExists('./Cakefile.js');
+    });
+  });
+
   it('handles a missing eslint config', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();
