@@ -181,6 +181,8 @@ more information.
   extensionless files), but this mapping can be used to override the behavior
   to provide a specific target directory, name, and/or file extension for any
   specific files being converted.
+* `outputFileExtension`: an optional file extension, like `"ts"` or `"jsx"`. If
+  specified, all converted files will have this extension.
 * `jscodeshiftScripts`: an optional array of paths to
   [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
   decaffeinate. This is useful to automate any cleanups to convert the output of

@@ -27,6 +27,7 @@ export default async function resolveConfig(commander) {
     searchDirectory: config.searchDirectory,
     fileFilterFn: config.fileFilterFn,
     customNames: resolveCustomNames(config.customNames),
+    outputFileExtension: config.outputFileExtension || 'js',
     fixImportsConfig: config.fixImportsConfig,
     jscodeshiftScripts: config.jscodeshiftScripts,
     landConfig: config.landConfig,
