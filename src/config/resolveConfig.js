@@ -26,6 +26,7 @@ export default async function resolveConfig(commander) {
     pathFile: config.pathFile,
     searchDirectory: config.searchDirectory,
     fileFilterFn: config.fileFilterFn,
+    customNames: resolveCustomNames(config.customNames),
     fixImportsConfig: config.fixImportsConfig,
     jscodeshiftScripts: config.jscodeshiftScripts,
     landConfig: config.landConfig,
@@ -156,4 +157,14 @@ async function resolveBinary(binaryName) {
       return binaryName;
     }
   }
+}
+
+function resolveCustomNames(customNames) {
+  let result = {};
+  if (customNames) {
+    for (const [key, value] of Object.entries(customNames)) {
+      result[resolve(key)] = resolve(value);
+    }
+  }
+  return result;
 }

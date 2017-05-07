@@ -176,6 +176,11 @@ more information.
   pass to decaffeinate. For example, `['--keep-commonjs']` sets the preference
   to keep `require` and `module.exports` rather than converting them to `import`
   and `export`.
+* `customNames`: an optional object mapping old filename to new filename. By
+  default, the extension is removed and replaced with ".js" (or nothing for
+  extensionless files), but this mapping can be used to override the behavior
+  to provide a specific target directory, name, and/or file extension for any
+  specific files being converted.
 * `jscodeshiftScripts`: an optional array of paths to
   [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
   decaffeinate. This is useful to automate any cleanups to convert the output of

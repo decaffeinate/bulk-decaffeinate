@@ -9,7 +9,7 @@ import CLIError from '../util/CLIError';
 export default async function getFilesToProcess(config) {
   let filesToProcess = await resolveFilesToProcess(config);
   filesToProcess = resolveFileFilter(filesToProcess, config);
-  await validateFilesToProcess(filesToProcess);
+  await validateFilesToProcess(filesToProcess, config);
   return filesToProcess;
 }
 
@@ -40,12 +40,12 @@ function resolveFileFilter(filesToProcess, config) {
   return filesToProcess.filter(path => config.fileFilterFn(path));
 }
 
-async function validateFilesToProcess(filesToProcess) {
+async function validateFilesToProcess(filesToProcess, config) {
   for (let path of filesToProcess) {
     if (isExtensionless(path)) {
       continue;
     }
-    let jsPath = jsPathFor(path);
+    let jsPath = jsPathFor(path, config);
     if (await exists(jsPath)) {
       throw new CLIError(`The file ${jsPath} already exists.`);
     }
