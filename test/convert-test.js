@@ -10,18 +10,12 @@ import {
   assertIncludes,
   initGitRepo,
   runCli,
+  runCliExpectSuccess,
   runCliExpectError,
   runWithTemplateDir,
 } from './test-util';
 
 describe('convert', () => {
-  async function runCliExpectSuccess(command) {
-    let {stdout, stderr} = await runCli(command);
-    assert(stderr.length === 0, `Nonempty stderr. stderr:\n${stderr}\n\nstdout:\n${stdout}`);
-    assertIncludes(stdout, 'Successfully ran decaffeinate');
-    return {stdout, stderr};
-  }
-
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
       await initGitRepo();

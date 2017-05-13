@@ -3,9 +3,12 @@ import assert from 'assert';
 import { readFile } from 'mz/fs';
 
 import {
+  assertFileContents,
   assertFileIncludes,
   assertIncludes,
+  initGitRepo,
   runCli,
+  runCliExpectSuccess,
   runWithTemplateDir,
 } from './test-util';
 
@@ -15,6 +18,25 @@ describe('basic CLI', () => {
     assertIncludes(stdout, 'Usage:');
     assertIncludes(stdout, 'Commands:');
     assertIncludes(stdout, 'Options:');
+  });
+});
+
+describe('config', () => {
+  it('allows explicitly-specified config files', async function() {
+    await runWithTemplateDir('custom-config-location', async function() {
+      await initGitRepo();
+      await runCliExpectSuccess(
+        'convert --config configDir1/config.js --config configDir2/otherConfig.js');
+      await assertFileContents('./A.ts', `\
+/* Automatically-added prefix. */
+/* eslint-disable
+    no-unused-vars,
+*/
+// TODO: This file was created by bulk-decaffeinate.
+// Fix any style issues and re-enable lint.
+const A = 1;
+`);
+    });
   });
 });
 

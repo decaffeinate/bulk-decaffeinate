@@ -128,9 +128,14 @@ export a JS object with your config. Any file starting with `bulk-decaffeinate`
 and ending with `.config.js` will be counted, and multiple config files may
 exist at once. If there are multiple config files, they are merged, with
 alphabetically-later config file names taking precedence over
-alphabetically-earlier files. Many config options can also be specified
-directly as CLI arguments, with CLI arguments taking precedence over any config
-file setting.
+alphabetically-earlier files.
+
+Alternatively, you may specify the config file location using the `--config`
+option, e.g. `bulk-decaffeinate --config ../bulk-decaffeinate.config.js` to use
+a config file one level up in the directory structure.
+
+Many config options can also be specified directly as CLI arguments, with CLI
+arguments taking precedence over any config file setting.
 
 Here's an example config file:
 
