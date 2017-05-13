@@ -107,7 +107,7 @@ Re-run with the "check" command for more details.`);
       let resolvedPath = resolveJscodeshiftScriptPath(scriptPath);
       console.log(`Running jscodeshift script ${resolvedPath}...`);
       await execLive(`${config.jscodeshiftPath} --parser flow \
-        -t ${resolvedPath} ${jsFiles.join(' ')}`);
+        -t ${resolvedPath} ${jsFiles.map(p => relative('', p)).join(' ')}`);
     }
   }
 
