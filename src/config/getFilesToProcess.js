@@ -3,6 +3,7 @@ import { resolve } from 'path';
 
 import getFilesFromPathFile from './getFilesFromPathFile';
 import getFilesUnderPath from '../util/getFilesUnderPath';
+import getTrackedFiles from '../util/getTrackedFiles';
 import { shouldConvertFile, isExtensionless, jsPathFor } from '../util/FilePaths';
 import CLIError from '../util/CLIError';
 
@@ -16,7 +17,9 @@ export default async function getFilesToProcess(config) {
 async function resolveFilesToProcess(config) {
   let {filesToProcess, pathFile, searchDirectory} = config;
   if (!filesToProcess && !pathFile && !searchDirectory) {
-    return await getFilesUnderPath('.', shouldConvertFile);
+    let trackedFiles = await getTrackedFiles();
+    return await getFilesUnderPath('.', async (path) =>
+      await shouldConvertFile(path, trackedFiles));
   }
   let files = [];
   if (filesToProcess) {
@@ -26,7 +29,9 @@ async function resolveFilesToProcess(config) {
     files.push(...await getFilesFromPathFile(pathFile));
   }
   if (searchDirectory) {
-    files.push(...await getFilesUnderPath(searchDirectory, shouldConvertFile));
+    let trackedFiles = await getTrackedFiles();
+    files.push(...await getFilesUnderPath(searchDirectory, async (path) =>
+      await shouldConvertFile(path, trackedFiles)));
   }
   files = files.map(path => resolve(path));
   files = Array.from(new Set(files)).sort();
@@ -41,7 +46,11 @@ function resolveFileFilter(filesToProcess, config) {
 }
 
 async function validateFilesToProcess(filesToProcess, config) {
+  let trackedFiles = await getTrackedFiles();
   for (let path of filesToProcess) {
+    if (!trackedFiles.has(path)) {
+      throw new CLIError(`The file ${path} is not tracked in the git repo.`);
+    }
     if (isExtensionless(path)) {
       continue;
     }

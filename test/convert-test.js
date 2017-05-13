@@ -2,13 +2,13 @@
 import assert from 'assert';
 import { exec } from 'mz/child_process';
 import { readFile, writeFile } from 'mz/fs';
+import git from 'simple-git/promise';
 
 import {
   assertExists,
   assertNotExists,
   assertFileContents,
   assertIncludes,
-  initGitRepo,
   runCli,
   runCliExpectSuccess,
   runCliExpectError,
@@ -18,7 +18,6 @@ import {
 describe('convert', () => {
   it('generates git commits converting the files', async function() {
     await runWithTemplateDir('simple-success', async function() {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
 
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
@@ -34,7 +33,6 @@ Sample User <sample@example.com> Initial commit
 
   it('generates a nice commit message when converting just one file', async function() {
     await runWithTemplateDir('simple-success', async function() {
-      await initGitRepo();
       await runCliExpectSuccess('convert --file ./A.coffee');
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
       assert.equal(logStdout, `\
@@ -49,7 +47,6 @@ Sample User <sample@example.com> Initial commit
 
   it('generates a nice commit message when converting three files', async function() {
     await runWithTemplateDir('file-list', async function () {
-      await initGitRepo();
       await runCliExpectSuccess('convert --path-file ./files-to-decaffeinate.txt');
       let logStdout = (await exec('git log --pretty="%an <%ae> %s"'))[0];
       assert.equal(logStdout, `\
@@ -64,7 +61,6 @@ Sample User <sample@example.com> Initial commit
 
   it('combines multiple path specifiers', async function() {
     await runWithTemplateDir('multiple-path-specifiers', async function () {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertExists('./A.js');
       await assertExists('./B.js');
@@ -79,7 +75,6 @@ Sample User <sample@example.com> Initial commit
 
   it('converts literate coffeescript', async function() {
     await runWithTemplateDir('literate-coffeescript', async function () {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 /* eslint-disable
@@ -112,7 +107,6 @@ let c = 1;
 
   it('runs jscodeshift', async function() {
     await runWithTemplateDir('jscodeshift-test', async function() {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 /* eslint-disable
@@ -128,7 +122,6 @@ let notChanged = 4;
 
   it('runs built-in jscodeshift scripts', async function() {
     await runWithTemplateDir('builtin-jscodeshift-script', async function() {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./Func.js', `\
 /* eslint-disable
@@ -172,7 +165,6 @@ return;
 
   it('prepends "eslint-env mocha" when specified', async function() {
     await runWithTemplateDir('mocha-env-test', async function () {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 // TODO: This file was created by bulk-decaffeinate.
@@ -191,7 +183,6 @@ console.log('This is test code');
 
   it('prepends a custom prefix specified', async function() {
     await runWithTemplateDir('code-prefix-test', async function () {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 /** @babel */
@@ -204,7 +195,6 @@ console.log('This is a file');
 
   it('respects decaffeinate args', async function() {
     await runWithTemplateDir('decaffeinate-args-test', async function () {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 /* eslint-disable
@@ -221,7 +211,6 @@ module.exports = c;
 
   it('allows converting extensionless scripts', async function() {
     await runWithTemplateDir('extensionless-script', async function () {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./runThing', `\
 #!/usr/bin/env node
@@ -239,7 +228,6 @@ console.log('Ran the thing!');
       let untouchedContents2 = (await readFile('./executableScriptWithWrongShebang')).toString();
       let untouchedContents3 = (await readFile('./nonExecutableScript')).toString();
 
-      await initGitRepo();
       await runCliExpectSuccess('convert');
 
       await assertFileContents('./executableScript', `\
@@ -264,7 +252,6 @@ console.log('This nested script is executable so it should be converted.');
 
   it('allows converting a directory with no files', async function() {
     await runWithTemplateDir('empty-directory', async function () {
-      await initGitRepo();
       let {stdout, stderr} = await runCli('convert');
       assert(stderr.length === 0, `Nonempty stderr. stderr:\n${stderr}\n\nstdout:\n${stdout}`);
       assertIncludes(stdout, 'There were no CoffeeScript files to convert.');
@@ -273,7 +260,6 @@ console.log('This nested script is executable so it should be converted.');
 
   it('runs eslint, applying fixes and disabling existing issues', async function() {
     await runWithTemplateDir('eslint-fix-test', async function() {
-      await initGitRepo();
       await runCliExpectSuccess('convert');
       await assertFileContents('./A.js', `\
 /* eslint-disable
@@ -291,15 +277,13 @@ console.log(x);
 
   it('fails when .coffee and .js files both exist', async function() {
     await runWithTemplateDir('existing-js-file', async function() {
-      await initGitRepo();
       let message = await runCliExpectError('convert');
-      assertIncludes(message, 'The file A.js already exists.');
+      assertIncludes(message, 'A.js already exists.');
     });
   });
 
-  it('fails when the git worktree has changes', async function() {
+  it('fails when the git worktree has changes, staged or unstaged', async function() {
     await runWithTemplateDir('simple-success', async function() {
-      await initGitRepo();
       await exec('echo "x = 2" >> A.coffee');
       let message = await runCliExpectError('convert');
       assertIncludes(message, 'You have modifications to your git worktree.');
@@ -309,9 +293,36 @@ console.log(x);
     });
   });
 
+  it('warns when the git worktree has untracked changes', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      await exec('echo "x = 2" >> new-file.coffee');
+      await exec('echo "x = 2" >> other-new-file.coffee');
+      let {stdout} = await runCliExpectSuccess('convert');
+      assertIncludes(stdout, `\
+Warning: the following untracked files are present in your repository:
+new-file.coffee
+other-new-file.coffee
+Proceeding anyway.`);
+      let status = await git().status();
+      assert.deepEqual(status.not_added, [
+        'A.original.coffee',
+        'B.original.coffee',
+        'new-file.coffee',
+        'other-new-file.coffee',
+      ]);
+    });
+  });
+
+  it('errors when explicitly specifying an untracked file', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      await exec('echo "x = 2" >> new-file.coffee');
+      let message = await runCliExpectError('convert -f ./new-file.coffee');
+      assertIncludes(message, 'is not tracked in the git repo.');
+    });
+  });
+
   it('generates backup files that are removed by clean', async function() {
     await runWithTemplateDir('backup-files', async function() {
-      await initGitRepo();
       await runCli('convert');
       await assertExists('./A.original.coffee');
       await assertExists('./B.original.coffee.md');
@@ -325,7 +336,6 @@ console.log(x);
 
   it('properly handles custom names', async function() {
     await runWithTemplateDir('custom-file-names', async function() {
-      await initGitRepo();
       await runCli('convert');
       await assertExists('./A.js');
       await assertExists('./dir/B.ts');
@@ -335,7 +345,6 @@ console.log(x);
 
   it('allows a custom file extension', async function() {
     await runWithTemplateDir('convert-to-typescript', async function() {
-      await initGitRepo();
       await runCli('convert');
       await assertExists('./A.ts');
     });
@@ -343,7 +352,6 @@ console.log(x);
 
   it('handles a missing eslint config', async function() {
     await runWithTemplateDir('simple-success', async function() {
-      await initGitRepo();
       let cliResult;
       try {
         await exec('mv ../../../.eslintrc ../../../.eslintrc.backup');
@@ -358,7 +366,6 @@ console.log(x);
 
   it('bypasses git commit hooks', async function() {
     await runWithTemplateDir('simple-success', async function() {
-      await initGitRepo();
       await writeFile('.git/hooks/commit-msg', '#!/bin/sh\nexit 1');
       await exec('chmod +x .git/hooks/commit-msg');
       await runCliExpectSuccess('convert');
@@ -368,14 +375,12 @@ console.log(x);
 
   it('allows invalid constructors when specified', async function() {
     await runWithTemplateDir('invalid-subclass-constructor', async function() {
-      await initGitRepo();
       await runCliExpectSuccess('convert --allow-invalid-constructors');
     });
   });
 
   it('does not allow invalid constructors when not specified', async function() {
     await runWithTemplateDir('invalid-subclass-constructor', async function() {
-      await initGitRepo();
       let message = await runCliExpectError('convert');
       assertIncludes(message, 'Some files could not be converted with decaffeinate');
     });

@@ -6,7 +6,6 @@ import {
   assertFileContents,
   assertFileIncludes,
   assertIncludes,
-  initGitRepo,
   runCli,
   runCliExpectSuccess,
   runWithTemplateDir,
@@ -24,7 +23,6 @@ describe('basic CLI', () => {
 describe('config', () => {
   it('allows explicitly-specified config files', async function() {
     await runWithTemplateDir('custom-config-location', async function() {
-      await initGitRepo();
       await runCliExpectSuccess(
         'convert --config configDir1/config.js --config configDir2/otherConfig.js');
       await assertFileContents('./A.ts', `\

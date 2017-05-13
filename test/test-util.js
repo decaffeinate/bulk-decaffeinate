@@ -80,6 +80,7 @@ export async function runWithTemplateDir(exampleName, fn) {
     await exec(`mkdir -p "${newDir}"`);
     await exec(`cp -r "./test/examples/${exampleName}/." "${newDir}"`);
     process.chdir(newDir);
+    await initGitRepo();
     await fn();
   } catch (e) {
     console.log('Assertion failure. Test data saved here:');
@@ -90,7 +91,7 @@ export async function runWithTemplateDir(exampleName, fn) {
   }
 }
 
-export async function initGitRepo() {
+async function initGitRepo() {
   await exec('git init');
   await exec('git config user.name "Sample User"');
   await exec('git config user.email "sample@example.com"');
