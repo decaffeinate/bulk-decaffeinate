@@ -16,11 +16,24 @@ function basePathFor(path) {
   return join(dirname(path), basename(path, extension));
 }
 
-export async function shouldConvertFile(path) {
-  if (COFFEE_EXTENSIONS.some(ext =>
-      path.endsWith(ext) && !path.endsWith(`.original${ext}`))) {
-    return true;
+export async function shouldConvertFile(path, trackedFiles) {
+  if (!hasCoffeeExtension(path) && !await isExecutableScript(path)) {
+    return false;
   }
+  if (!trackedFiles.has(path)) {
+    console.log(
+      `Warning: Skipping ${path} because the file is not tracked in the git repo.`);
+    return false;
+  }
+  return true;
+}
+
+function hasCoffeeExtension(path) {
+  return COFFEE_EXTENSIONS.some(ext =>
+    path.endsWith(ext) && !path.endsWith(`.original${ext}`));
+}
+
+async function isExecutableScript(path) {
   if (isExtensionless(path) && await executable(path)) {
     let contents = await readFile(path);
     let firstLine = contents.toString().split('\n')[0];

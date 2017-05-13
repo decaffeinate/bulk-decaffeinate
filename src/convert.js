@@ -12,7 +12,6 @@ import CLIError from './util/CLIError';
 import execLive from './util/execLive';
 import { backupPathFor, decaffeinateOutPathFor, jsPathFor } from './util/FilePaths';
 import getFilesUnderPath from './util/getFilesUnderPath';
-import isWorktreeEmpty from './util/isWorktreeEmpty';
 import makeCommit from './util/makeCommit';
 import pluralize from './util/pluralize';
 
@@ -179,10 +178,17 @@ Re-run with the "check" command for more details.`);
 }
 
 async function assertGitWorktreeClean() {
-  if (!await isWorktreeEmpty()) {
+  let status = await git().status();
+  if (status.files.length > status.not_added.length) {
     throw new CLIError(`\
 You have modifications to your git worktree.
 Please revert or commit them before running convert.`);
+  } else if (status.not_added.length > 0) {
+    console.log(`\
+Warning: the following untracked files are present in your repository:
+${status.not_added.join('\n')}
+Proceeding anyway.
+`);
   }
 }
 

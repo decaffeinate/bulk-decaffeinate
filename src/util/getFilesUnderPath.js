@@ -1,5 +1,5 @@
 import { readdir, stat } from 'mz/fs';
-import { join } from 'path';
+import { join, resolve } from 'path';
 
 /**
  * Recursively discover any matching files in the current directory, ignoring
@@ -12,7 +12,7 @@ export default async function getFilesUnderPath(dirPath, asyncPathPredicate) {
     if (['node_modules', '.git'].includes(child)) {
       continue;
     }
-    let childPath = join(dirPath, child);
+    let childPath = resolve(join(dirPath, child));
     if ((await stat(childPath)).isDirectory()) {
       let subdirCoffeeFiles = await getFilesUnderPath(childPath, asyncPathPredicate);
       resultFiles.push(...subdirCoffeeFiles);

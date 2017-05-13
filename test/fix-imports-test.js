@@ -5,7 +5,6 @@ import { exec } from 'mz/child_process';
 import {
   assertFilesEqual,
   assertIncludes,
-  initGitRepo,
   runCli,
   runWithTemplateDir,
 } from './test-util';
@@ -16,7 +15,6 @@ describe('fix-imports', () => {
     await runWithTemplateDir(dirName, async function () {
       // We intentionally call the files ".js.expected" so that jscodeshift
       // doesn't discover and try to convert them.
-      await initGitRepo();
       let {stdout, stderr} = await runCli('convert');
       assertIncludes(stdout, 'Fixing any imports across the whole codebase');
       assert.equal(stderr, '');
