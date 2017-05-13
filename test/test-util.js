@@ -16,6 +16,13 @@ export async function runCli(args) {
   return {stdout, stderr};
 }
 
+export async function runCliExpectSuccess(command) {
+  let {stdout, stderr} = await runCli(command);
+  assert(stderr.length === 0, `Nonempty stderr. stderr:\n${stderr}\n\nstdout:\n${stdout}`);
+  assertIncludes(stdout, 'Successfully ran decaffeinate');
+  return {stdout, stderr};
+}
+
 export async function runCliExpectError(args) {
   try {
     await runCli(args);

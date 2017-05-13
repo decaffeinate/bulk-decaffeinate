@@ -14,10 +14,16 @@ import execLive from '../util/execLive';
 export default async function resolveConfig(commander) {
   let config = {};
 
-  let currentDirFiles = await readdir('.');
-  currentDirFiles.sort();
-  for (let filename of currentDirFiles) {
-    config = await applyPossibleConfig(filename, config);
+  if (commander.config && commander.config.length > 0) {
+    for (let filename of commander.config) {
+      config = applyConfig(filename, config);
+    }
+  } else {
+    let currentDirFiles = await readdir('.');
+    currentDirFiles.sort();
+    for (let filename of currentDirFiles) {
+      config = await applyPossibleConfig(filename, config);
+    }
   }
   config = getCLIParamsConfig(config, commander);
   return {
@@ -47,17 +53,21 @@ async function applyPossibleConfig(filename, config) {
     return config;
   }
 
-  let filePath = resolve(filename);
   if (filename.endsWith('.config.js')) {
-    try {
-      let newConfig = requireUncached(filePath);
-      return Object.assign(config, newConfig);
-    } catch (e) {
-      throw new CLIError(
-        `Error reading file ${filePath}. Make sure it is a valid JS file.`);
-    }
+    return applyConfig(filename, config);
   } else {
     return config;
+  }
+}
+
+function applyConfig(filename, config) {
+  let filePath = resolve(filename);
+  try {
+    let newConfig = requireUncached(filePath);
+    return Object.assign(config, newConfig);
+  } catch (e) {
+    throw new CLIError(
+      `Error reading file ${filePath}. Make sure it is a valid JS file.`);
   }
 }
 
