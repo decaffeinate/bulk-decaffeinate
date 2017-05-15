@@ -3,10 +3,11 @@ import { writeFile } from 'mz/fs';
 import getFilesToProcess from './config/getFilesToProcess';
 import makeDecaffeinateVerifyFn from './runner/makeDecaffeinateVerifyFn';
 import runWithProgressBar from './runner/runWithProgressBar';
+import { COFFEE_FILE_RECOGNIZER } from './util/FilePaths';
 import pluralize from './util/pluralize';
 
 export default async function check(config) {
-  let filesToProcess = await getFilesToProcess(config);
+  let filesToProcess = await getFilesToProcess(config, COFFEE_FILE_RECOGNIZER);
   let decaffeinateResults = await runWithProgressBar(
     `Doing a dry run of decaffeinate on ${pluralize(filesToProcess.length, 'file')}...`,
     filesToProcess, makeDecaffeinateVerifyFn(config),

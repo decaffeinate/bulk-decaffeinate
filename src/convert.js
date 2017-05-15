@@ -12,14 +12,19 @@ import makeCLIFn from './runner/makeCLIFn';
 import makeDecaffeinateVerifyFn from './runner/makeDecaffeinateVerifyFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
-import { backupPathFor, decaffeinateOutPathFor, jsPathFor } from './util/FilePaths';
+import {
+  backupPathFor,
+  COFFEE_FILE_RECOGNIZER,
+  decaffeinateOutPathFor,
+  jsPathFor,
+} from './util/FilePaths';
 import makeCommit from './util/makeCommit';
 import pluralize from './util/pluralize';
 
 export default async function convert(config) {
   await assertGitWorktreeClean();
 
-  let coffeeFiles = await getFilesToProcess(config);
+  let coffeeFiles = await getFilesToProcess(config, COFFEE_FILE_RECOGNIZER);
   if (coffeeFiles.length === 0) {
     console.log('There were no CoffeeScript files to convert.');
     return;
@@ -113,7 +118,7 @@ Re-run with the "check" command for more details.`);
   if (config.fixImportsConfig) {
     thirdCommitModifiedFiles = await runFixImports(jsFiles, config);
   }
-  await runEslintFix(jsFiles, config);
+  await runEslintFix(jsFiles, config, {isUpdate: false});
   if (config.codePrefix) {
     await prependCodePrefix(jsFiles, config.codePrefix);
   }

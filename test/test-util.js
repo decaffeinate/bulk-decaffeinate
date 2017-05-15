@@ -1,6 +1,4 @@
 /* eslint-env mocha */
-import 'babel-polyfill';
-
 import assert from 'assert';
 import { exec } from 'mz/child_process';
 import { exists, readFile } from 'mz/fs';
@@ -19,7 +17,7 @@ export async function runCli(args) {
 export async function runCliExpectSuccess(command) {
   let {stdout, stderr} = await runCli(command);
   assert(stderr.length === 0, `Nonempty stderr. stderr:\n${stderr}\n\nstdout:\n${stdout}`);
-  assertIncludes(stdout, 'Successfully ran decaffeinate');
+  assertIncludes(stdout, 'Successfully');
   return {stdout, stderr};
 }
 

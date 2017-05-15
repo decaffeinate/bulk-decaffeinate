@@ -4,9 +4,9 @@ import runWithProgressBar from '../runner/runWithProgressBar';
 import CLIError from '../util/CLIError';
 import prependToFile from '../util/prependToFile';
 
-export default async function runEslintFix(jsFiles, config) {
+export default async function runEslintFix(jsFiles, config, {isUpdate}) {
   let eslintResults = await runWithProgressBar(
-    'Running eslint --fix on all files...', jsFiles, makeEslintFixFn(config));
+    'Running eslint --fix on all files...', jsFiles, makeEslintFixFn(config, {isUpdate}));
   for (let result of eslintResults) {
     for (let message of result.messages) {
       console.log(message);
@@ -16,11 +16,12 @@ export default async function runEslintFix(jsFiles, config) {
 
 export const HEADER_COMMENT_LINES = {
   todo: '// TODO: This file was created by bulk-decaffeinate.',
+  todoUpdated: '// TODO: This file was updated by bulk-decaffeinate.',
   fixIssues: '// Fix any style issues and re-enable lint.',
   sanityCheck: '// Sanity-check the conversion and remove this comment.',
 };
 
-function makeEslintFixFn(config) {
+function makeEslintFixFn(config, {isUpdate}) {
   return async function runEslint(path) {
     let messages = [];
 
@@ -47,10 +48,24 @@ function makeEslintFixFn(config) {
       ruleIds = Array.from(new Set(ruleIds)).sort();
     }
 
-    await prependToFile(`${path}`, `\
-${HEADER_COMMENT_LINES.todo}
-${ruleIds.length > 0 ? HEADER_COMMENT_LINES.fixIssues : HEADER_COMMENT_LINES.sanityCheck}
-`);
+    if (isUpdate) {
+      // When we're just updating a JS file, a TODO is useful if there's real
+      // stuff to fix.
+      if (ruleIds.length > 0) {
+        await prependToFile(
+          `${path}`, `${HEADER_COMMENT_LINES.todoUpdated}\n${HEADER_COMMENT_LINES.fixIssues}\n`);
+      }
+    } else {
+      // If we generated the whole file from CoffeeScript, always leave a
+      // suggestion to clean up the file.
+      if (ruleIds.length > 0) {
+        await prependToFile(
+          `${path}`, `${HEADER_COMMENT_LINES.todo}\n${HEADER_COMMENT_LINES.fixIssues}\n`);
+      } else {
+        await prependToFile(
+          `${path}`, `${HEADER_COMMENT_LINES.todo}\n${HEADER_COMMENT_LINES.sanityCheck}\n`);
+      }
+    }
     if (ruleIds.length > 0) {
       await prependToFile(`${path}`, `\
 /* eslint-disable

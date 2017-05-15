@@ -6,6 +6,7 @@ import clean from './clean';
 import resolveConfig from './config/resolveConfig';
 import convert from './convert';
 import land from './land';
+import modernizeJS from './modernizeJS';
 import CLIError from './util/CLIError';
 import viewErrors from './viewErrors';
 
@@ -73,6 +74,9 @@ async function runCommand(command) {
     } else if (command === 'convert') {
       let config = await resolveConfig(commander);
       await convert(config);
+    } else if (command === 'modernize-js') {
+      let config = await resolveConfig(commander);
+      await modernizeJS(config);
     } else if (command === 'view-errors') {
       await viewErrors();
     } else if (command === 'clean') {
