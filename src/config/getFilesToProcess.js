@@ -4,22 +4,27 @@ import { resolve } from 'path';
 import getFilesFromPathFile from './getFilesFromPathFile';
 import getFilesUnderPath from '../util/getFilesUnderPath';
 import getTrackedFiles from '../util/getTrackedFiles';
-import { shouldConvertFile, isExtensionless, jsPathFor } from '../util/FilePaths';
+import { shouldConvertFile, jsPathFor } from '../util/FilePaths';
 import CLIError from '../util/CLIError';
 
-export default async function getFilesToProcess(config) {
-  let filesToProcess = await resolveFilesToProcess(config);
+/**
+ * Get the files that we should process based on the config. "recognizer" should
+ * be an object describing the files to auto-recognize, e.g.
+ * COFFEE_FILE_RECOGNIZER.
+ */
+export default async function getFilesToProcess(config, recognizer) {
+  let filesToProcess = await resolveFilesToProcess(config, recognizer);
   filesToProcess = resolveFileFilter(filesToProcess, config);
   await validateFilesToProcess(filesToProcess, config);
   return filesToProcess;
 }
 
-async function resolveFilesToProcess(config) {
+async function resolveFilesToProcess(config, recognizer) {
   let {filesToProcess, pathFile, searchDirectory} = config;
   if (!filesToProcess && !pathFile && !searchDirectory) {
     let trackedFiles = await getTrackedFiles();
     return await getFilesUnderPath('.', async (path) =>
-      await shouldConvertFile(path, trackedFiles));
+      await shouldConvertFile(path, recognizer, trackedFiles));
   }
   let files = [];
   if (filesToProcess) {
@@ -31,7 +36,7 @@ async function resolveFilesToProcess(config) {
   if (searchDirectory) {
     let trackedFiles = await getTrackedFiles();
     files.push(...await getFilesUnderPath(searchDirectory, async (path) =>
-      await shouldConvertFile(path, trackedFiles)));
+      await shouldConvertFile(path, recognizer, trackedFiles)));
   }
   files = files.map(path => resolve(path));
   files = Array.from(new Set(files)).sort();
@@ -51,11 +56,8 @@ async function validateFilesToProcess(filesToProcess, config) {
     if (!trackedFiles.has(path)) {
       throw new CLIError(`The file ${path} is not tracked in the git repo.`);
     }
-    if (isExtensionless(path)) {
-      continue;
-    }
     let jsPath = jsPathFor(path, config);
-    if (await exists(jsPath)) {
+    if (jsPath !== path && await exists(jsPath)) {
       throw new CLIError(`The file ${jsPath} already exists.`);
     }
   }

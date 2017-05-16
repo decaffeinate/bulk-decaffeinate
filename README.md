@@ -71,7 +71,10 @@ bulk-decaffeinate supports a number of commands:
   page with your source code encoded in the hash fragment of the URL. Because it
   is in the hash fragment and not a regular query param, your code is never sent
   to the server.
-* `convert` actually converts the files from CofeeScript to JavaScript.
+* `convert` actually converts the files from CofeeScript to JavaScript,
+  generating a commit for each intermediate step.
+* `modernize-js` runs only the JS-to-JS transformations on the specified
+  JavaScript files. Unlike `convert`, this command does not create a git commit.
 * `clean` deletes all files with ".original" in the name in the current
   directory or any of its subdirectories.
 * `land` packages multiple commits into a merge commit based on an remote branch

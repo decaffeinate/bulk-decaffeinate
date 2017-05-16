@@ -2,7 +2,15 @@ import executable from 'executable';
 import { readFile } from 'mz/fs';
 import { basename, dirname, extname, join } from 'path';
 
-const COFFEE_EXTENSIONS = ['.coffee', '.litcoffee', '.coffee.md'];
+export const COFFEE_FILE_RECOGNIZER = {
+  extensions: ['.coffee', '.litcoffee', '.coffee.md'],
+  shebangSuffix: 'coffee',
+};
+
+export const JS_FILE_RECOGNIZER = {
+  extensions: ['.js'],
+  shebangSuffix: 'node',
+};
 
 function extensionFor(path) {
   if (path.endsWith('.coffee.md')) {
@@ -16,8 +24,9 @@ function basePathFor(path) {
   return join(dirname(path), basename(path, extension));
 }
 
-export async function shouldConvertFile(path, trackedFiles) {
-  if (!hasCoffeeExtension(path) && !await isExecutableScript(path)) {
+export async function shouldConvertFile(path, recognizer, trackedFiles) {
+  if (!hasRecognizedExtension(path, recognizer) &&
+      !await isExecutableScript(path, recognizer)) {
     return false;
   }
   if (!trackedFiles.has(path)) {
@@ -28,16 +37,16 @@ export async function shouldConvertFile(path, trackedFiles) {
   return true;
 }
 
-function hasCoffeeExtension(path) {
-  return COFFEE_EXTENSIONS.some(ext =>
+function hasRecognizedExtension(path, recognizer) {
+  return recognizer.extensions.some(ext =>
     path.endsWith(ext) && !path.endsWith(`.original${ext}`));
 }
 
-async function isExecutableScript(path) {
+async function isExecutableScript(path, recognizer) {
   if (isExtensionless(path) && await executable(path)) {
     let contents = await readFile(path);
     let firstLine = contents.toString().split('\n')[0];
-    if (firstLine.startsWith('#!') && firstLine.includes('coffee')) {
+    if (firstLine.startsWith('#!') && firstLine.includes(recognizer.shebangSuffix)) {
       return true;
     }
   }
