@@ -1,17 +1,18 @@
-import { exec } from 'mz/child_process';
-import { copy, move, readFile, unlink, writeFile } from 'fs-promise';
-import { basename, join, relative, resolve } from 'path';
+import { copy, move, unlink } from 'fs-promise';
+import { basename } from 'path';
 import git from 'simple-git/promise';
-import zlib from 'zlib';
 
 import getFilesToProcess from './config/getFilesToProcess';
+import prependCodePrefix from './modernize/prependCodePrefix';
+import prependMochaEnv from './modernize/prependMochaEnv';
+import runEslintFix from './modernize/runEslintFix';
+import runFixImports from './modernize/runFixImports';
+import runJscodeshiftScripts from './modernize/runJscodeshiftScripts';
 import makeCLIFn from './runner/makeCLIFn';
 import makeDecaffeinateVerifyFn from './runner/makeDecaffeinateVerifyFn';
 import runWithProgressBar from './runner/runWithProgressBar';
 import CLIError from './util/CLIError';
-import execLive from './util/execLive';
 import { backupPathFor, decaffeinateOutPathFor, jsPathFor } from './util/FilePaths';
-import getFilesUnderPath from './util/getFilesUnderPath';
 import makeCommit from './util/makeCommit';
 import pluralize from './util/pluralize';
 
@@ -103,65 +104,18 @@ Re-run with the "check" command for more details.`);
   await makeCommit(decaffeinateCommitMsg);
 
   if (config.jscodeshiftScripts) {
-    for (let scriptPath of config.jscodeshiftScripts) {
-      let resolvedPath = resolveJscodeshiftScriptPath(scriptPath);
-      console.log(`Running jscodeshift script ${resolvedPath}...`);
-      await execLive(`${config.jscodeshiftPath} --parser flow \
-        -t ${resolvedPath} ${jsFiles.map(p => relative('', p)).join(' ')}`);
-    }
+    await runJscodeshiftScripts(jsFiles, config);
   }
-
   if (config.mochaEnvFilePattern) {
-    let regex = new RegExp(config.mochaEnvFilePattern);
-    let testFiles = jsFiles.filter(f => regex.test(f));
-    await runWithProgressBar(
-      'Adding /* eslint-env mocha */ to test files...', testFiles, async function(path) {
-        await prependToFile(path, '/* eslint-env mocha */\n');
-        return {error: null};
-      });
+    await prependMochaEnv(jsFiles, config.mochaEnvFilePattern);
   }
-
   let thirdCommitModifiedFiles = jsFiles.slice();
   if (config.fixImportsConfig) {
-    let {searchPath, absoluteImportPaths} = config.fixImportsConfig;
-    if (!absoluteImportPaths) {
-      absoluteImportPaths = [];
-    }
-    let scriptPath = join(__dirname, '../jscodeshift-scripts-dist/fix-imports.js');
-
-    let options = {
-      convertedFiles: jsFiles.map(p => resolve(p)),
-      absoluteImportPaths: absoluteImportPaths.map(p => resolve(p)),
-    };
-    let eligibleFixImportsFiles = await getEligibleFixImportsFiles(searchPath, jsFiles);
-    console.log('Fixing any imports across the whole codebase...');
-    if (eligibleFixImportsFiles.length > 0) {
-      // Note that the args can get really long, so we take reasonable steps to
-      // reduce the chance of hitting the system limit on arg length
-      // (256K by default on Mac).
-      let eligibleRelativePaths = eligibleFixImportsFiles.map(p => relative('', p));
-      thirdCommitModifiedFiles = eligibleFixImportsFiles;
-      let encodedOptions = zlib.deflateSync(JSON.stringify(options)).toString('base64');
-      await execLive(`\
-      ${config.jscodeshiftPath} --parser flow -t ${scriptPath} \
-        ${eligibleRelativePaths.join(' ')} --encoded-options=${encodedOptions}`);
-    }
+    thirdCommitModifiedFiles = await runFixImports(jsFiles, config);
   }
-
-  let eslintResults = await runWithProgressBar(
-    'Running eslint --fix on all files...', jsFiles, makeEslintFixFn(config));
-  for (let result of eslintResults) {
-    for (let message of result.messages) {
-      console.log(message);
-    }
-  }
-
+  await runEslintFix(jsFiles, config);
   if (config.codePrefix) {
-    await runWithProgressBar(
-      'Adding code prefix to converted files...', jsFiles, async function(path) {
-        await prependToFile(path, config.codePrefix);
-        return {error: null};
-      });
+    await prependCodePrefix(jsFiles, config.codePrefix);
   }
 
   let postProcessCommitMsg =
@@ -199,99 +153,4 @@ function getShortDescription(coffeeFiles) {
   } else {
     return `${firstFile} and ${pluralize(coffeeFiles.length - 1, 'other file')}`;
   }
-}
-
-function resolveJscodeshiftScriptPath(scriptPath) {
-  if ([
-      'prefer-function-declarations.js',
-      'remove-coffee-from-imports.js',
-      'top-level-this-to-exports.js',
-    ].includes(scriptPath)) {
-    return join(__dirname, `../jscodeshift-scripts-dist/${scriptPath}`);
-  }
-  return scriptPath;
-}
-
-async function getEligibleFixImportsFiles(searchPath, jsFiles) {
-  let jsBasenames = jsFiles.map(p => basename(p, '.js'));
-  let resolvedPaths = jsFiles.map(p => resolve(p));
-  let allJsFiles = await getFilesUnderPath(searchPath, p => p.endsWith('.js'));
-  await runWithProgressBar(
-    'Searching for files that may need to have updated imports...',
-    allJsFiles,
-    async function(p) {
-      let resolvedPath = resolve(p);
-      if (resolvedPaths.includes(resolvedPath)) {
-        return {error: null};
-      }
-      let contents = (await readFile(resolvedPath)).toString();
-      for (let jsBasename of jsBasenames) {
-        if (contents.includes(jsBasename)) {
-          resolvedPaths.push(resolvedPath);
-          return {error: null};
-        }
-      }
-      return {error: null};
-    });
-  return resolvedPaths;
-}
-
-function makeEslintFixFn(config) {
-  return async function runEslint(path) {
-    let messages = [];
-
-    // Ignore the eslint exit code; it gives useful stdout in the same format
-    // regardless of the exit code. Also keep a 10MB buffer since sometimes
-    // there can be a LOT of lint failures.
-    let eslintOutputStr = (await exec(
-      `${config.eslintPath} --fix --format json ${path}; :`,
-      {maxBuffer: 10000*1024}))[0];
-
-    let ruleIds;
-    if (eslintOutputStr.includes("ESLint couldn't find a configuration file")) {
-      messages.push(`Skipping "eslint --fix" on ${path} because there was no eslint config file.`);
-      ruleIds = [];
-    } else {
-      let eslintOutput;
-      try {
-        eslintOutput = JSON.parse(eslintOutputStr);
-      } catch (e) {
-        throw new CLIError(`Error while running eslint:\n${eslintOutputStr}`);
-      }
-      ruleIds = eslintOutput[0].messages
-        .map(message => message.ruleId).filter(ruleId => ruleId);
-      ruleIds = Array.from(new Set(ruleIds)).sort();
-    }
-
-    let suggestionLine;
-    if (ruleIds.length > 0) {
-      suggestionLine = 'Fix any style issues and re-enable lint.';
-    } else {
-      suggestionLine = 'Sanity-check the conversion and remove this comment.';
-    }
-
-    await prependToFile(`${path}`, `\
-// TODO: This file was created by bulk-decaffeinate.
-// ${suggestionLine}
-`);
-    if (ruleIds.length > 0) {
-      await prependToFile(`${path}`, `\
-/* eslint-disable
-${ruleIds.map(ruleId => `    ${ruleId},`).join('\n')}
-*/
-`);
-    }
-    return {error: null, messages};
-  };
-}
-
-async function prependToFile(path, prependText) {
-  let contents = await readFile(path);
-  let lines = contents.toString().split('\n');
-  if (lines[0] && lines[0].startsWith('#!')) {
-    contents = lines[0] + '\n' + prependText + lines.slice(1).join('\n');
-  } else {
-    contents = prependText + contents;
-  }
-  await writeFile(path, contents);
 }
