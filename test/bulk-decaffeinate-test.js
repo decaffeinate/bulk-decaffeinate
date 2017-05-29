@@ -132,4 +132,13 @@ describe('check', () => {
       assertIncludes(stdout, 'All checks succeeded');
     });
   });
+
+  it('ignores config file paths when CLI arg paths are specified', async function() {
+    await runWithTemplateDir('search-directory-config', async function() {
+      let {stdout, stderr} = await runCli('check -f ./A.coffee');
+      assert.equal(stderr, '');
+      assertIncludes(stdout, 'Doing a dry run of decaffeinate on 1 file...');
+      assertIncludes(stdout, 'All checks succeeded');
+    });
+  });
 });

@@ -86,6 +86,14 @@ function getCLIParamsConfig(config, commander) {
     jscodeshiftPath,
     eslintPath,
   } = commander;
+  // As a special case, specifying files to process from the CLI should cause
+  // any equivalent config file settings to be ignored.
+  if ((file && file.length > 0) || dir || pathFile) {
+    config.filesToProcess = null;
+    config.searchDirectory = null;
+    config.pathFile = null;
+  }
+
   if (file && file.length > 0) {
     config.filesToProcess = file;
   }
