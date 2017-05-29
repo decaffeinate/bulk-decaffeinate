@@ -175,8 +175,8 @@ If multiple of `searchDirectory`, `pathFile`, or `filesToProcess` are specified,
 the union of the files is taken. If none is specified, bulk-decaffeinate will
 recursively discover all CoffeeScript files in the working directory.
 
-Each of these has a command line arg version; see the result of `--help` for
-more information.
+Each of these has a command line arg version, which takes precedence over config
+file values; see the result of `--help` for more information.
 
 ### Other configuration
 
