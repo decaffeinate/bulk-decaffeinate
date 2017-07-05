@@ -16,7 +16,7 @@ describe('modernize-js', () => {
 */
 // TODO: This file was updated by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-let a = 1;
+const a = 1;
 `);
     });
   });
@@ -31,7 +31,7 @@ let a = 1;
 */
 // TODO: This file was updated by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-let a = 1;
+const a = 1;
 `);
     });
   });
@@ -40,7 +40,7 @@ let a = 1;
     await runWithTemplateDir('modernize-no-lint-failure', async function() {
       await runCliExpectSuccess('modernize-js');
       await assertFileContents('./A.js', `\
-import path from 'path';
+const path = require('path');
 path.resolve();
 `);
     });
@@ -55,8 +55,8 @@ path.resolve();
 */
 // TODO: This file was updated by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-let nameAfter = 1;
-let notChanged = 2;
+const nameAfter = 1;
+const notChanged = 2;
 `);
     });
   });

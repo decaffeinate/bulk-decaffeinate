@@ -22,7 +22,7 @@ const {
 
 console.log(twelve);
 console.log(tenAndSeven);
-let NameClash = 25;
+const NameClash = 25;
 console.log(twenty);
 console.log(twentySix);
 console.log(NameClash);
