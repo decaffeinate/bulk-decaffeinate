@@ -13,34 +13,41 @@ some follow-up cleanups. Here's an example of checking the Hubot repo:
 ```
 > npm install -g bulk-decaffeinate decaffeinate eslint
 ...
-> git clone git@github.com:github/hubot.git
+> git clone https://github.com/philc/vimium.git
 ...
-> cd hubot
+> cd vimium
 > bulk-decaffeinate check
-Doing a dry run of decaffeinate on 18 files...
-18/18 (5 failures so far)
-5 files failed to convert:
-src/adapter.coffee
-src/adapters/campfire.coffee
-src/brain.coffee
-src/listener.coffee
-src/message.coffee
-
-Wrote decaffeinate-errors.log and decaffeinate-results.json with more detailed info.
-To open failures in the online repl, run "bulk-decaffeinate view-errors".
-To convert the successful files, run "bulk-decaffeinate convert -p decaffeinate-successful-files.txt".
-> bulk-decaffeinate view-errors
-(7 browser tabs are opened, showing all failures.)
-> bulk-decaffeinate check --allow-invalid-constructors
-Doing a dry run of decaffeinate on 18 files...
-18/18
-All checks succeeded! decaffeinate can convert all 18 files.
+Doing a dry run of decaffeinate on 50 files...
+50/50
+All checks succeeded! decaffeinate can convert all 50 files.
 Run "bulk-decaffeinate convert" to convert the files to JavaScript.
+> bulk-decaffeinate convert
+Verifying that decaffeinate can successfully convert these files...
+50/50
+Backing up files to .original.coffee...
+50/50
+Renaming files from .coffee to .js...
+50/50
+Generating the first commit: "decaffeinate: Rename bg_utils.coffee and 49 other files from .coffee to .js"...
+Moving files back...
+50/50
+Running decaffeinate on all files...
+50/50
+Deleting old files...
+50/50
+Setting proper extension for all files...
+50/50
+Generating the second commit: decaffeinate: Convert bg_utils.coffee and 49 other files to JS...
+Running eslint --fix on all files...
+50/50
+[Skips eslint for all files because there is no config.]
+Generating the third commit: decaffeinate: Run post-processing cleanups on bg_utils.coffee and 49 other files...
+Successfully ran decaffeinate on 50 files.
+You should now fix lint issues in any affected files.
+All CoffeeScript files were backed up as .original.coffee files that you can use for comparison.
+You can run "bulk-decaffeinate clean" to remove those files.
+To allow git to properly track file history, you should NOT squash the generated commits together.
 ```
-
-Once any failures are resolved (generally by tweaking the CoffeeScript to work
-with decaffeinate), the command `bulk-decaffeinate convert` generates three git
-commits to convert the files to JS.
 
 ## Assumptions
 
@@ -178,19 +185,16 @@ recursively discover all CoffeeScript files in the working directory.
 Each of these has a command line arg version, which takes precedence over config
 file values; see the result of `--help` for more information.
 
-### Other configuration
+### Common configuration options
 
+* `useJSModules`: an optional boolean. If true, decaffeinate will be configured
+  to produce code with `import`/`export` syntax, and the fix-imports step will
+  be run afterward to correct any import statements across the codebase. The
+  fix-imports step can be configured using `fixImportsConfig`.
 * `decaffeinateArgs`: an optional array of additional command-line arguments to
   pass to decaffeinate. For example, `['--keep-commonjs']` sets the preference
   to keep `require` and `module.exports` rather than converting them to `import`
   and `export`.
-* `customNames`: an optional object mapping old filename to new filename. By
-  default, the extension is removed and replaced with ".js" (or nothing for
-  extensionless files), but this mapping can be used to override the behavior
-  to provide a specific target directory, name, and/or file extension for any
-  specific files being converted.
-* `outputFileExtension`: an optional file extension, like `"ts"` or `"jsx"`. If
-  specified, all converted files will have this extension.
 * `jscodeshiftScripts`: an optional array of paths to
   [jscodeshift](https://github.com/facebook/jscodeshift) scripts to run after
   decaffeinate. This is useful to automate any cleanups to convert the output of
@@ -211,6 +215,16 @@ file values; see the result of `--help` for more information.
     as an absolute path starting point when resolving imports. This is necessary
     if you do any tricks to get absolute-style imports in your project, since
     the fix-imports script needs to be able to resolve import names to files.
+
+### Other configuration
+
+* `customNames`: an optional object mapping old filename to new filename. By
+  default, the extension is removed and replaced with ".js" (or nothing for
+  extensionless files), but this mapping can be used to override the behavior
+  to provide a specific target directory, name, and/or file extension for any
+  specific files being converted.
+* `outputFileExtension`: an optional file extension, like `"ts"` or `"jsx"`. If
+  specified, all converted files will have this extension.
 * `mochaEnvFilePattern`: an optional regular expression string. If specified,
   all generated JavaScript files with a path matching this pattern have the text
   `/* eslint-env mocha */` added to the start. For example, `"^.*-test.js$"`.

@@ -27,14 +27,14 @@ export default async function resolveConfig(commander) {
   }
   config = getCLIParamsConfig(config, commander);
   return {
-    decaffeinateArgs: config.decaffeinateArgs || [],
+    decaffeinateArgs: resolveDecaffeinateArgs(config),
     filesToProcess: config.filesToProcess,
     pathFile: config.pathFile,
     searchDirectory: config.searchDirectory,
     fileFilterFn: config.fileFilterFn,
     customNames: resolveCustomNames(config.customNames),
     outputFileExtension: config.outputFileExtension || 'js',
-    fixImportsConfig: config.fixImportsConfig,
+    fixImportsConfig: resolveFixImportsConfig(config),
     jscodeshiftScripts: config.jscodeshiftScripts,
     landConfig: config.landConfig,
     mochaEnvFilePattern: config.mochaEnvFilePattern,
@@ -45,6 +45,24 @@ export default async function resolveConfig(commander) {
     jscodeshiftPath: await resolveJscodeshiftPath(config),
     eslintPath: await resolveEslintPath(config),
   };
+}
+
+function resolveDecaffeinateArgs(config) {
+  let args = config.decaffeinateArgs || [];
+  if (config.useJSModules && !args.includes('--use-js-modules')) {
+    args.push('--use-js-modules');
+  }
+  return args;
+}
+
+function resolveFixImportsConfig(config) {
+  let fixImportsConfig = config.fixImportsConfig;
+  if (!fixImportsConfig && config.useJSModules) {
+    fixImportsConfig = {
+      searchPath: '.',
+    };
+  }
+  return fixImportsConfig;
 }
 
 async function applyPossibleConfig(filename, config) {
@@ -79,7 +97,7 @@ function getCLIParamsConfig(config, commander) {
     file,
     pathFile,
     dir,
-    allowInvalidConstructors,
+    useJsModules,
     landBase,
     skipVerify,
     decaffeinatePath,
@@ -103,8 +121,8 @@ function getCLIParamsConfig(config, commander) {
   if (pathFile) {
     config.pathFile = pathFile;
   }
-  if (allowInvalidConstructors) {
-    config.decaffeinateArgs = [...(config.decaffeinateArgs || []), '--allow-invalid-constructors'];
+  if (useJsModules) {
+    config.useJSModules = true;
   }
   if (landBase) {
     config.landBase = landBase;
@@ -134,7 +152,7 @@ async function resolveDecaffeinatePath(config) {
 async function resolveJscodeshiftPath(config) {
   // jscodeshift is an optional step, so don't prompt to install it if we won't
   // be using it.
-  if (!config.jscodeshiftScripts && !config.fixImportsConfig) {
+  if (!config.jscodeshiftScripts && !config.fixImportsConfig && !config.useJSModules) {
     return null;
   }
   if (config.jscodeshiftPath) {

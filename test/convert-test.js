@@ -82,7 +82,7 @@ Sample User <sample@example.com> Initial commit
 */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-let a = 1;
+const a = 1;
 `);
       await assertFileContents('./B.js', `\
 /* eslint-disable
@@ -91,7 +91,7 @@ let a = 1;
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
 // This is a literate file.
-let b = 1;
+const b = 1;
 `);
       await assertFileContents('./C.js', `\
 /* eslint-disable
@@ -100,7 +100,7 @@ let b = 1;
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
 // This is another literate file.
-let c = 1;
+const c = 1;
 `);
     });
   });
@@ -114,8 +114,8 @@ let c = 1;
 */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-let nameAfter = 3;
-let notChanged = 4;
+const nameAfter = 3;
+const notChanged = 4;
 `);
     });
   });
@@ -129,7 +129,14 @@ let notChanged = 4;
 */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-let a = require('./A');
+/*
+ * decaffeinate suggestions:
+ * DS102: Remove unnecessary code created because of implicit returns
+ * DS208: Avoid top-level this
+ * DS209: Avoid top-level return
+ * Full docs: https://github.com/decaffeinate/decaffeinate/blob/master/docs/suggestions.md
+ */
+const a = require('./A');
 
 // This is a comment
 function f() {
@@ -203,7 +210,7 @@ console.log('This is a file');
 */
 // TODO: This file was created by bulk-decaffeinate.
 // Fix any style issues and re-enable lint.
-let a = require('b');
+const a = require('b');
 module.exports = c;
 `);
     });
@@ -370,19 +377,6 @@ Proceeding anyway.`);
       await exec('chmod +x .git/hooks/commit-msg');
       await runCliExpectSuccess('convert');
       assert.equal((await exec('git rev-list --count HEAD'))[0].trim(), '4');
-    });
-  });
-
-  it('allows invalid constructors when specified', async function() {
-    await runWithTemplateDir('invalid-subclass-constructor', async function() {
-      await runCliExpectSuccess('convert --allow-invalid-constructors');
-    });
-  });
-
-  it('does not allow invalid constructors when not specified', async function() {
-    await runWithTemplateDir('invalid-subclass-constructor', async function() {
-      let message = await runCliExpectError('convert');
-      assertIncludes(message, 'Some files could not be converted with decaffeinate');
     });
   });
 });

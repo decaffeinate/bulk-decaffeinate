@@ -41,9 +41,10 @@ export default function () {
     .option('-d, --dir [path]',
       `A directory containing files to decaffeinate. All .coffee files in
                               any subdirectory of this directory are considered for decaffeinate.`)
-    .option('--allow-invalid-constructors',
-      `If specified, the --allow-invalid-constructors arg is added when
-                              invoking decaffeinate.`)
+    .option('--use-js-modules',
+      `If specified, decaffeinate will convert the code to use import/export
+                              syntax and a follow-up fix-imports step will correct any imports
+                              across the codebase.`)
     .option('--land-base [revision]',
       `The git revision to use as the base commit when running the "land"
                               command. If none is specified, bulk-decaffeinate tries to use the
@@ -61,6 +62,8 @@ export default function () {
     .option('--eslint-path [path]',
       `The path to the eslint binary. If none is specified, it will be
                               automatically discovered from node_modules and then from the PATH.`)
+    .option('--allow-invalid-constructors',
+      `Deprecated; decaffeinate now allows invalid constructors by default.`)
     .parse(process.argv);
 
   runCommand(command);

@@ -1,5 +1,3 @@
 module.exports = {
-  fixImportsConfig: {
-    searchPath: '.',
-  },
+  decaffeinateArgs: ['--loose-js-modules'],
 };
