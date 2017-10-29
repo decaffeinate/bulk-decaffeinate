@@ -1,3 +1,6 @@
+import moment from 'moment';
+import 'moment-precise-range-plugin';
+
 import runInParallel from './runInParallel';
 import CLIError from '../util/CLIError';
 import pluralize from '../util/pluralize';
@@ -16,6 +19,7 @@ export default async function runWithProgressBar(
   let numProcessed = 0;
   let numFailures = 0;
   let numTotal = files.length;
+  let startTime = moment();
   console.log(description);
   let numConcurrentProcesses = runInSeries ? 1 : NUM_CONCURRENT_PROCESSES;
   let results;
@@ -33,6 +37,7 @@ export default async function runWithProgressBar(
     });
   } finally {
     process.stdout.write('\n');
+    console.log(`Finished in ${startTime.preciseDiff() || '0 seconds'} (Time: ${moment().format()})`);
   }
   return results;
 }
