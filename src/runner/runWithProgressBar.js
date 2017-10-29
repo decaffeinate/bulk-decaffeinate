@@ -5,8 +5,6 @@ import runInParallel from './runInParallel';
 import CLIError from '../util/CLIError';
 import pluralize from '../util/pluralize';
 
-const NUM_CONCURRENT_PROCESSES = 8;
-
 /**
  * Run the given command in parallel, showing a progress bar of results.
  *
@@ -15,13 +13,13 @@ const NUM_CONCURRENT_PROCESSES = 8;
  * any other fields.
  */
 export default async function runWithProgressBar(
-    description, files, asyncFn, {runInSeries, allowFailures}={}) {
+    config, description, files, asyncFn, {runInSeries, allowFailures}={}) {
   let numProcessed = 0;
   let numFailures = 0;
   let numTotal = files.length;
   let startTime = moment();
-  console.log(description);
-  let numConcurrentProcesses = runInSeries ? 1 : NUM_CONCURRENT_PROCESSES;
+  let numConcurrentProcesses = runInSeries ? 1 : config.numWorkers;
+  console.log(`${description} (${pluralize(numConcurrentProcesses, 'worker')})`);
   let results;
   try {
     results = await runInParallel(files, asyncFn, numConcurrentProcesses, ({result}) => {

@@ -6,6 +6,7 @@ import prependToFile from '../util/prependToFile';
 
 export default async function runEslintFix(jsFiles, config, {isUpdate}) {
   let eslintResults = await runWithProgressBar(
+    config,
     'Running eslint --fix on all files...', jsFiles, makeEslintFixFn(config, {isUpdate}));
   for (let result of eslintResults) {
     for (let message of result.messages) {

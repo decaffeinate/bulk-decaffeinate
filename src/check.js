@@ -9,6 +9,7 @@ import pluralize from './util/pluralize';
 export default async function check(config) {
   let filesToProcess = await getFilesToProcess(config, COFFEE_FILE_RECOGNIZER);
   let decaffeinateResults = await runWithProgressBar(
+    config,
     `Doing a dry run of decaffeinate on ${pluralize(filesToProcess.length, 'file')}...`,
     filesToProcess, makeDecaffeinateVerifyFn(config),
     {allowFailures: true});

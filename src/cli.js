@@ -49,6 +49,8 @@ export default function () {
       `The git revision to use as the base commit when running the "land"
                               command. If none is specified, bulk-decaffeinate tries to use the
                               first auto-generated commit in recent history.`)
+    .option('--num-workers [number]',
+      `The number of workers to use for parallel operations.`)
     .option('--skip-verify',
       `If specified, skips the initial verification step when running the
                               "convert" command.`)

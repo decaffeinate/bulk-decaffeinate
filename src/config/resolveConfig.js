@@ -40,6 +40,7 @@ export default async function resolveConfig(commander) {
     mochaEnvFilePattern: config.mochaEnvFilePattern,
     codePrefix: config.codePrefix,
     landBase: config.landBase,
+    numWorkers: config.numWorkers || 8,
     skipVerify: config.skipVerify,
     decaffeinatePath: await resolveDecaffeinatePath(config),
     jscodeshiftPath: await resolveJscodeshiftPath(config),
@@ -99,6 +100,7 @@ function getCLIParamsConfig(config, commander) {
     dir,
     useJsModules,
     landBase,
+    numWorkers,
     skipVerify,
     decaffeinatePath,
     jscodeshiftPath,
@@ -126,6 +128,9 @@ function getCLIParamsConfig(config, commander) {
   }
   if (landBase) {
     config.landBase = landBase;
+  }
+  if (numWorkers) {
+    config.numWorkers = numWorkers;
   }
   if (skipVerify) {
     config.skipVerify = true;

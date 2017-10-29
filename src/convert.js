@@ -36,6 +36,7 @@ export default async function convert(config) {
   if (!config.skipVerify) {
     try {
       await runWithProgressBar(
+        config,
         'Verifying that decaffeinate can successfully convert these files...',
         coffeeFiles, makeDecaffeinateVerifyFn(config));
     } catch (e) {
@@ -46,6 +47,7 @@ Re-run with the "check" command for more details.`);
   }
 
   await runWithProgressBar(
+    config,
     'Backing up files to .original.coffee...',
     coffeeFiles,
     async function(coffeePath) {
@@ -53,6 +55,7 @@ Re-run with the "check" command for more details.`);
     });
 
   await runWithProgressBar(
+    config,
     `Renaming files from .coffee to .${config.outputFileExtension}...`,
     movingCoffeeFiles,
     async function(coffeePath) {
@@ -71,6 +74,7 @@ Re-run with the "check" command for more details.`);
   }
 
   await runWithProgressBar(
+    config,
     'Moving files back...',
     movingCoffeeFiles,
     async function(coffeePath) {
@@ -78,12 +82,14 @@ Re-run with the "check" command for more details.`);
     });
 
   await runWithProgressBar(
+    config,
     'Running decaffeinate on all files...',
     coffeeFiles,
     makeCLIFn(path => `${decaffeinatePath} ${decaffeinateArgs.join(' ')} ${path}`)
   );
 
   await runWithProgressBar(
+    config,
     'Deleting old files...',
     coffeeFiles,
     async function(coffeePath) {
@@ -91,6 +97,7 @@ Re-run with the "check" command for more details.`);
     });
 
   await runWithProgressBar(
+    config,
     'Setting proper extension for all files...',
     coffeeFiles,
     async function(coffeePath) {
@@ -112,7 +119,7 @@ Re-run with the "check" command for more details.`);
     await runJscodeshiftScripts(jsFiles, config);
   }
   if (config.mochaEnvFilePattern) {
-    await prependMochaEnv(jsFiles, config.mochaEnvFilePattern);
+    await prependMochaEnv(config, jsFiles, config.mochaEnvFilePattern);
   }
   let thirdCommitModifiedFiles = jsFiles.slice();
   if (config.fixImportsConfig) {
@@ -120,7 +127,7 @@ Re-run with the "check" command for more details.`);
   }
   await runEslintFix(jsFiles, config, {isUpdate: false});
   if (config.codePrefix) {
-    await prependCodePrefix(jsFiles, config.codePrefix);
+    await prependCodePrefix(config, jsFiles, config.codePrefix);
   }
 
   let postProcessCommitMsg =
