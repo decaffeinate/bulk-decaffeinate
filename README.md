@@ -246,6 +246,8 @@ file values; see the result of `--help` for more information.
 * `landBase`: if specified, overrides the auto-detected base commit when running
     the `land` command. Generally this is specified on the command line using
     `--land-base` rather than in a config file.
+* `numWorkers`: if specified, the number of parallel workers to use for parallel
+    operations like `decaffeinate` and `eslint --fix`.
 * `skipVerify`: set to `true` to skip the initial verification step when running
   the `convert` command. This makes bulk-decaffeinate take less time, but if any
   files fail to convert, it may leave the filesystem in a partially-converted

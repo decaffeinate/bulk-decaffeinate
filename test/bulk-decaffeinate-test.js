@@ -141,4 +141,12 @@ describe('check', () => {
       assertIncludes(stdout, 'All checks succeeded');
     });
   });
+
+  it('allows specifying the number of parallel workers', async function() {
+    await runWithTemplateDir('simple-success', async function() {
+      let {stdout, stderr} = await runCli('check --num-workers 3');
+      assert.equal(stderr, '');
+      assertIncludes(stdout, '(3 workers)');
+    });
+  });
 });

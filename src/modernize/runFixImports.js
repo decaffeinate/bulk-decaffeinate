@@ -21,7 +21,8 @@ export default async function runFixImports(jsFiles, config) {
     convertedFiles: jsFiles.map(p => resolve(p)),
     absoluteImportPaths: absoluteImportPaths.map(p => resolve(p)),
   };
-  let eligibleFixImportsFiles = await getEligibleFixImportsFiles(searchPath, jsFiles);
+  let eligibleFixImportsFiles = await getEligibleFixImportsFiles(
+    config, searchPath, jsFiles);
   console.log('Fixing any imports across the whole codebase...');
   if (eligibleFixImportsFiles.length > 0) {
     // Note that the args can get really long, so we take reasonable steps to
@@ -36,11 +37,12 @@ export default async function runFixImports(jsFiles, config) {
   return eligibleFixImportsFiles;
 }
 
-async function getEligibleFixImportsFiles(searchPath, jsFiles) {
+async function getEligibleFixImportsFiles(config, searchPath, jsFiles) {
   let jsBasenames = jsFiles.map(p => basename(p, '.js'));
   let resolvedPaths = jsFiles.map(p => resolve(p));
   let allJsFiles = await getFilesUnderPath(searchPath, p => p.endsWith('.js'));
   await runWithProgressBar(
+    config,
     'Searching for files that may need to have updated imports...',
     allJsFiles,
     async function(p) {
