@@ -59,6 +59,8 @@
     "commander": "^2.9.0",
     "executable": "^4.1.0",
     "fs-promise": "^1.0.0",
+    "moment": "^2.19.1",
+    "moment-precise-range-plugin": "^1.2.4",
     "mz": "^2.4.0",
     "opn": "^4.0.2",
     "require-uncached": "^1.0.2",
