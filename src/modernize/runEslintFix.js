@@ -29,20 +29,20 @@ function makeEslintFixFn(config, {isUpdate}) {
     // Ignore the eslint exit code; it gives useful stdout in the same format
     // regardless of the exit code. Also keep a 10MB buffer since sometimes
     // there can be a LOT of lint failures.
-    let eslintOutputStr = (await exec(
+    let [eslintStdout, eslintStderr] = (await exec(
       `${config.eslintPath} --fix --format json ${path}; :`,
-      {maxBuffer: 10000*1024}))[0];
+      {maxBuffer: 10000*1024}));
 
     let ruleIds;
-    if (eslintOutputStr.includes("ESLint couldn't find a configuration file")) {
+    if ((eslintStdout + eslintStderr).includes("ESLint couldn't find a configuration file")) {
       messages.push(`Skipping "eslint --fix" on ${path} because there was no eslint config file.`);
       ruleIds = [];
     } else {
       let eslintOutput;
       try {
-        eslintOutput = JSON.parse(eslintOutputStr);
+        eslintOutput = JSON.parse(eslintStdout);
       } catch (e) {
-        throw new CLIError(`Error while running eslint:\n${eslintOutputStr}`);
+        throw new CLIError(`Error while running eslint:\n${eslintStdout}\n${eslintStderr}`);
       }
       ruleIds = eslintOutput[0].messages
         .map(message => message.ruleId).filter(ruleId => ruleId);
