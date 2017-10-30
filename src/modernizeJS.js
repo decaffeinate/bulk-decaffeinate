@@ -30,7 +30,9 @@ export default async function modernizeJS(config) {
   if (config.fixImportsConfig) {
     await runFixImports(jsFiles, config);
   }
-  await runEslintFix(jsFiles, config, {isUpdate: true});
+  if (!config.skipEslintFix) {
+    await runEslintFix(jsFiles, config, {isUpdate: true});
+  }
 
   console.log(`Successfully modernized ${pluralize(jsFiles.length, 'file')}.`);
   console.log('You should now fix lint issues in any affected files.');
