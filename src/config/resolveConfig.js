@@ -11,7 +11,7 @@ import execLive from '../util/execLive';
  * Resolve the configuration from a number of sources: any number of config
  * files and CLI options. Then "canonicalize" the config as much as we can.
  */
-export default async function resolveConfig(commander) {
+export default async function resolveConfig(commander, {needsJscodeshift, needsEslint} = {}) {
   let config = {};
 
   if (commander.config && commander.config.length > 0) {
@@ -42,9 +42,10 @@ export default async function resolveConfig(commander) {
     landBase: config.landBase,
     numWorkers: config.numWorkers || 8,
     skipVerify: config.skipVerify,
+    skipEslintFix: config.skipEslintFix,
     decaffeinatePath: await resolveDecaffeinatePath(config),
-    jscodeshiftPath: await resolveJscodeshiftPath(config),
-    eslintPath: await resolveEslintPath(config),
+    jscodeshiftPath: needsJscodeshift ? await resolveJscodeshiftPath(config) : null,
+    eslintPath: needsEslint ? await resolveEslintPath(config) : null,
   };
 }
 
@@ -167,6 +168,9 @@ async function resolveJscodeshiftPath(config) {
 }
 
 async function resolveEslintPath(config) {
+  if (config.skipEslintFix) {
+    return null;
+  }
   if (config.eslintPath) {
     return config.eslintPath;
   }

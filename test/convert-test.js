@@ -379,4 +379,11 @@ Proceeding anyway.`);
       assert.equal((await exec('git rev-list --count HEAD'))[0].trim(), '4');
     });
   });
+
+  it('allows skipping eslint --fix', async function() {
+    await runWithTemplateDir('skip-eslint-fix', async function() {
+      const {stdout} = await runCliExpectSuccess('convert');
+      assert(!stdout.includes('Running eslint'), 'Expected eslint to be skipped.');
+    });
+  });
 });

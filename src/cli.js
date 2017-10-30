@@ -77,10 +77,10 @@ async function runCommand(command) {
       let config = await resolveConfig(commander);
       await check(config);
     } else if (command === 'convert') {
-      let config = await resolveConfig(commander);
+      let config = await resolveConfig(commander, {needsJscodeshift: true, needsEslint: true});
       await convert(config);
     } else if (command === 'modernize-js') {
-      let config = await resolveConfig(commander);
+      let config = await resolveConfig(commander, {needsJscodeshift: true, needsEslint: true});
       await modernizeJS(config);
     } else if (command === 'view-errors') {
       await viewErrors();

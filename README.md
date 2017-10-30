@@ -252,6 +252,7 @@ file values; see the result of `--help` for more information.
   the `convert` command. This makes bulk-decaffeinate take less time, but if any
   files fail to convert, it may leave the filesystem in a partially-converted
   state.
+* `skipEslintFix`: set to `true` to skip the ESLint step.
 
 ### Configuring paths to external tools
 
