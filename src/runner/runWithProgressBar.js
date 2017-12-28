@@ -1,9 +1,9 @@
 import moment from 'moment';
-import 'moment-precise-range-plugin';
 
 import runInParallel from './runInParallel';
 import CLIError from '../util/CLIError';
 import pluralize from '../util/pluralize';
+import momentPreciseDiff from '../util/momentPreciseDiff';
 
 /**
  * Run the given command in parallel, showing a progress bar of results.
@@ -35,7 +35,9 @@ export default async function runWithProgressBar(
     });
   } finally {
     process.stdout.write('\n');
-    console.log(`Finished in ${startTime.preciseDiff() || '0 seconds'} (Time: ${moment().format()})`);
+    let endTime = moment();
+    let diffStr = momentPreciseDiff(startTime, endTime) || '0 seconds';
+    console.log(`Finished in ${diffStr} (Time: ${moment().format()})`);
   }
   return results;
 }

@@ -37,7 +37,7 @@
   "homepage": "https://github.com/decaffeinate/bulk-decaffeinate#readme",
   "devDependencies": {
     "babel-cli": "^6.16.0",
-    "babel-eslint": "^7.0.0",
+    "babel-eslint": "^8.1.2",
     "babel-plugin-external-helpers": "^6.8.0",
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "babel-plugin-transform-regenerator": "^6.11.4",
@@ -60,7 +60,6 @@
     "executable": "^4.1.0",
     "fs-promise": "^1.0.0",
     "moment": "^2.19.1",
-    "moment-precise-range-plugin": "^1.2.4",
     "mz": "^2.4.0",
     "opn": "^4.0.2",
     "require-uncached": "^1.0.2",
