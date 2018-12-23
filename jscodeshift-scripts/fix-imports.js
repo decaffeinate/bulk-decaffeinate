@@ -25,7 +25,7 @@ import zlib from 'zlib';
 export default function (fileInfo, api, options) {
   let decodedOptions = JSON.parse(
     zlib.inflateSync(
-      new Buffer(options['encoded-options'], 'base64')
+      Buffer.from(options['encoded-options'], 'base64')
     ).toString()
   );
   let {convertedFiles, absoluteImportPaths} = decodedOptions;
