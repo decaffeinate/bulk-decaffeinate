@@ -58,7 +58,7 @@
     "babel-polyfill": "^6.13.0",
     "commander": "^2.9.0",
     "executable": "^4.1.0",
-    "fs-promise": "^1.0.0",
+    "fs-promise": "^2.0.3",
     "moment": "^2.19.1",
     "mz": "^2.4.0",
     "opn": "^4.0.2",
