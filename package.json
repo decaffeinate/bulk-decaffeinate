@@ -61,7 +61,7 @@
     "fs-promise": "^2.0.3",
     "moment": "^2.19.1",
     "mz": "^2.4.0",
-    "opn": "^4.0.2",
+    "opn": "^6.0.0",
     "require-uncached": "^2.0.0",
     "simple-git": "^1.70.0"
   }
