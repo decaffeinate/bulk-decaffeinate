@@ -37,7 +37,7 @@
   "homepage": "https://github.com/decaffeinate/bulk-decaffeinate#readme",
   "devDependencies": {
     "babel-cli": "^6.16.0",
-    "babel-eslint": "^8.1.2",
+    "babel-eslint": "^10.1.0",
     "babel-plugin-external-helpers": "^6.8.0",
     "babel-plugin-syntax-async-functions": "^6.13.0",
     "babel-plugin-transform-regenerator": "^6.11.4",
