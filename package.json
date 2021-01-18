@@ -45,7 +45,7 @@
     "babel-register": "^6.11.6",
     "babelrc-rollup": "^3.0.0",
     "decaffeinate": "^3.0.0",
-    "eslint": "^5.16.0",
+    "eslint": "^7.18.0",
     "eslint-plugin-babel": "^5.3.0",
     "jscodeshift": "^0.6.4",
     "mocha": "^3.0.2",
