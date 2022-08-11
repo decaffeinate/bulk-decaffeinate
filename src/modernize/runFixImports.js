@@ -31,7 +31,7 @@ export default async function runFixImports(jsFiles, config) {
     let eligibleRelativePaths = eligibleFixImportsFiles.map(p => relative('', p));
     let encodedOptions = zlib.deflateSync(JSON.stringify(options)).toString('base64');
     await execLive(`\
-      ${config.jscodeshiftPath} --parser flow -t ${scriptPath} \
+      ${config.jscodeshiftPath} -t ${scriptPath} \
         ${eligibleRelativePaths.join(' ')} --encoded-options=${encodedOptions}`);
   }
   return eligibleFixImportsFiles;
